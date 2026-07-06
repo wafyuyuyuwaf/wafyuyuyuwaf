@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>拼豆图纸像素化工具</title>
+    <style>
+        /* ========== 全局重置 & 基础样式 ========== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f7f5fa;
+            color: #2d2a3a;
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app {
+            max-width: 1100px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 32px 36px 40px;
+            box-shadow: 0 20px 60px rgba(90, 60, 140, 0.12);
+            transition: box-shadow 0.25s;
+        }
+
+        /* ========== 标题 ========== */
+        .app-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+        }
+        .app-header h1 {
+            font-size: 26px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.5px;
+        }
+        .app-header .badge {
+            font-size: 13px;
+            background: #ede9fe;
+            color: #6d28d9;
+            padding: 4px 14px;
+            border-radius: 40px;
+            font-weight: 500;
+            -webkit-text-fill-color: #6d28d9;
+        }
+
+        /* ========== 控制区 ========== */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 18px 24px;
+            background: #faf8fc;
+            padding: 20px 24px;
+            border-radius: 16px;
+            border: 1px solid #ede9fe;
+            margin-bottom: 24px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #4b4560;
+            letter-spacing: 0.3px;
+        }
+        .control-group label .unit {
+            font-weight: 400;
+            color: #8b85a0;
+            font-size: 12px;
+        }
+
+        .file-upload-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .file-upload-wrapper input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 0.1px;
+            height: 0.1px;
+            pointer-events: none;
+        }
+        .file-upload-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px;
+            background: #ede9fe;
+            color: #5b21b6;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .file-upload-label:hover {
+            background: #ddd6fe;
+        }
+        .file-upload-label:active {
+            transform: scale(0.96);
+        }
+        .file-upload-label .icon {
+            font-size: 18px;
+            line-height: 1;
+        }
+        .file-name {
+            font-size: 13px;
+            color: #6b6485;
+            margin-left: 4px;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 400;
+        }
+
+        .controls input[type="number"] {
+            width: 76px;
+            padding: 8px 6px 8px 12px;
+            border: 1.5px solid #e2ddf0;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #2d2a3a;
+            background: #fff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            -moz-appearance: textfield;
+        }
+        .controls input[type="number"]::-webkit-outer-spin-button,
+        .controls input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .controls input[type="number"]:focus {
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+        }
+
+        .btn-primary {
+            padding: 9px 28px;
+            background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+            border: none;
+            border-radius: 40px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.25s;
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.30);
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+        }
+        .btn-primary:hover {
+            box-shadow: 0 6px 24px rgba(124, 58, 237, 0.38);
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);
+        }
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            padding: 9px 24px;
+            background: #ffffff;
+            border: 1.5px solid #d5cee8;
+            border-radius: 40px;
+            color: #4b4560;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #f5f2fc;
+            border-color: #b8add6;
+        }
+
+        /* ========== 预览区 ========== */
+        .preview-area {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            min-height: 60px;
+        }
+        .preview-area .preview-img {
+            max-height: 100px;
+            max-width: 160px;
+            border-radius: 10px;
+            border: 1px solid #ede9fe;
+            object-fit: contain;
+            background: #faf8fc;
+            display: none;
+        }
+        .preview-area .preview-placeholder {
+            font-size: 14px;
+            color: #a8a1bc;
+        }
+        .preview-area .info-text {
+            font-size: 14px;
+            color: #6b6485;
+        }
+
+        /* ========== 图纸容器（滚动） ========== */
+        .grid-wrapper {
+            position: relative;
+            overflow: auto;
+            padding: 8px 0 8px 0;
+            margin: 8px 0 20px 0;
+            border-radius: 14px;
+            background: #fcfafd;
+            border: 1px solid #f0ebf8;
+            max-height: 75vh;
+        }
+
+        /* 网格容器 — CSS Grid 布局 */
+        .grid-container {
+            display: grid;
+            gap: 1px;
+            background-color: #d5cee2;
+            /* 网格线颜色（灰色） */
+            border-left: 6px solid #8b5cf6;
+            /* 左侧紫色粗边框 */
+            border-right: 6px solid #8b5cf6;
+            /* 右侧紫色粗边框 */
+            width: fit-content;
+            margin: 0 auto;
+            /* 水平居中 */
+            transition: opacity 0.15s;
+        }
+
+        /* 每个格子 */
+        .cell {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            background-color: #ffffff;
+            transition: background-color 0.05s;
+        }
+
+        /* 加载占位 */
+        .grid-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px 20px;
+            color: #b8add6;
+            font-size: 15px;
+            font-weight: 500;
+            min-height: 200px;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .grid-placeholder .emoji-big {
+            font-size: 42px;
+        }
+
+        /* ========== 图例区 ========== */
+        .legend-area {
+            margin-top: 20px;
+            padding: 20px 24px 24px;
+            background: #faf8fc;
+            border-radius: 16px;
+            border: 1px solid #ede9fe;
+        }
+
+        .legend-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px 16px;
+            margin-bottom: 16px;
+        }
+        .legend-header .title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2d2a3a;
+        }
+        .legend-header .title span {
+            font-weight: 400;
+            font-size: 14px;
+            color: #7a7396;
+            margin-left: 6px;
+        }
+        .legend-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 18px;
+            padding: 4px 0 2px;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        /* 单个颜色项 */
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #3d3852;
+            background: #ffffff;
+            padding: 4px 12px 4px 6px;
+            border-radius: 30px;
+            border: 1px solid #ede9fe;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+            transition: box-shadow 0.15s;
+        }
+        .legend-item:hover {
+            box-shadow: 0 2px 10px rgba(90, 60, 140, 0.08);
+        }
+        .legend-item .color-swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 6px;
+            border: 1px solid #e9e4f2;
+            flex-shrink: 0;
+        }
+        .legend-item .color-hex {
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4b4560;
+        }
+        .legend-item .color-count {
+            font-size: 12px;
+            font-weight: 400;
+            color: #8b85a0;
+            margin-left: 2px;
+        }
+        .legend-item .color-count::before {
+            content: '· ';
+            color: #c8c0db;
+        }
+
+        /* ========== 下载按钮 ========== */
+        .btn-download {
+            padding: 9px 26px;
+            background: #10b981;
+            border: none;
+            border-radius: 40px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.12s, box-shadow 0.25s;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.30);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-download:hover {
+            box-shadow: 0 6px 24px rgba(16, 185, 129, 0.38);
+            transform: translateY(-1px);
+        }
+        .btn-download:active {
+            transform: scale(0.96);
+        }
+        .btn-download:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 700px) {
+            .app {
+                padding: 18px 14px 24px;
+            }
+            .controls {
+                padding: 16px 16px;
+                gap: 14px 16px;
+            }
+            .controls input[type="number"] {
+                width: 64px;
+                padding: 6px 4px 6px 10px;
+                font-size: 14px;
+            }
+            .file-upload-label {
+                font-size: 13px;
+                padding: 7px 14px;
+            }
+            .btn-primary {
+                padding: 7px 20px;
+                font-size: 14px;
+            }
+            .grid-wrapper {
+                max-height: 60vh;
+            }
+            .legend-items {
+                gap: 8px 12px;
+                max-height: 200px;
+            }
+            .legend-item {
+                font-size: 12px;
+                padding: 3px 10px 3px 5px;
+            }
+            .legend-item .color-swatch {
+                width: 18px;
+                height: 18px;
+            }
+            .app-header h1 {
+                font-size: 21px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+            .control-group {
+                width: 100%;
+            }
+            .controls input[type="number"] {
+                width: 100%;
+            }
+            .file-upload-wrapper {
+                width: 100%;
+            }
+            .file-upload-label {
+                justify-content: center;
+                width: 100%;
+            }
+            .btn-primary {
+                width: 100%;
+                justify-content: center;
+            }
+            .legend-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .legend-actions {
+                width: 100%;
+            }
+            .legend-actions .btn-download {
+                flex: 1;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+        <!-- 头部 -->
+        <header class="app-header">
+            <h1>🧩 拼豆图纸 · 像素化</h1>
+            <span class="badge">Pixel Art Generator</span>
+        </header>
+
+        <!-- ===== 控制区 ===== -->
+        <section class="controls">
+            <!-- 上传 -->
+            <div class="control-group">
+                <label>📤 上传图片</label>
+                <div class="file-upload-wrapper">
+                    <input type="file" id="fileInput" accept="image/*" />
+                    <label class="file-upload-label" for="fileInput">
+                        <span class="icon">🖼️</span> 选择图片
+                        <span class="file-name" id="fileName">未选择</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 行数 -->
+            <div class="control-group">
+                <label>行数 <span class="unit">(Rows)</span></label>
+                <input type="number" id="rowsInput" value="40" min="1" max="300" />
+            </div>
+
+            <!-- 列数 -->
+            <div class="control-group">
+                <label>列数 <span class="unit">(Cols)</span></label>
+                <input type="number" id="colsInput" value="30" min="1" max="300" />
+            </div>
+
+            <!-- 生成按钮 -->
+            <div class="control-group" style="justify-content: flex-end;">
+                <button class="btn-primary" id="generateBtn">✨ 生成图纸</button>
+            </div>
+        </section>
+
+        <!-- ===== 预览区 ===== -->
+        <div class="preview-area" id="previewArea">
+            <img class="preview-img" id="previewImg" alt="预览" />
+            <span class="preview-placeholder" id="previewPlaceholder">📷 上传图片后，此处显示缩略图</span>
+            <span class="info-text" id="imageInfo"></span>
+        </div>
+
+        <!-- ===== 图纸渲染区 ===== -->
+        <div class="grid-wrapper" id="gridWrapper">
+            <div class="grid-container" id="gridContainer">
+                <div class="grid-placeholder" id="gridPlaceholder">
+                    <span class="emoji-big">🧩</span>
+                    <span>上传图片并点击「生成图纸」</span>
+                    <span style="font-size:13px;color:#c8c0db;">网格将在此处呈现</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 图例 & 统计区 ===== -->
+        <section class="legend-area" id="legendArea">
+            <div class="legend-header">
+                <div class="title">
+                    🎨 颜色图例
+                    <span id="legendCount">(0 种颜色)</span>
+                </div>
+                <div class="legend-actions">
+                    <button class="btn-download" id="downloadBtn">⬇️ 下载图纸 (PNG)</button>
+                </div>
+            </div>
+            <div class="legend-items" id="legendItems">
+                <span style="color:#b8add6;font-size:14px;padding:6px 0;">暂无数据，生成图纸后显示</span>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        /* ================================================================
+         *  拼豆图纸像素化工具  —  完整 JavaScript 逻辑
+         *  技术栈：原生 JS + CSS Grid + Canvas (仅用于像素读取 & 下载)
+         *  性能优化：DocumentFragment / requestAnimationFrame 分批渲染
+         * ================================================================ */
+
+        (function() {
+            'use strict';
+
+            // ---------- DOM 引用 ----------
+            const fileInput = document.getElementById('fileInput');
+            const fileName = document.getElementById('fileName');
+            const rowsInput = document.getElementById('rowsInput');
+            const colsInput = document.getElementById('colsInput');
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const gridContainer = document.getElementById('gridContainer');
+            const gridPlaceholder = document.getElementById('gridPlaceholder');
+            const previewImg = document.getElementById('previewImg');
+            const previewPlaceholder = document.getElementById('previewPlaceholder');
+            const imageInfo = document.getElementById('imageInfo');
+            const legendItems = document.getElementById('legendItems');
+            const legendCount = document.getElementById('legendCount');
+
+            // ---------- 状态 ----------
+            let uploadedImage = null; // 用户上传的 Image 对象
+            let currentGridData = null; // 存储当前网格颜色数据 { colors, rows, cols, colorMap }
+            let isGenerating = false;
+
+            // ---------- 工具函数 ----------
+            /** 将 RGB 对象转为 6 位十六进制字符串 */
+            function rgbToHex(r, g, b) {
+                const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+                return '#' + [clamp(r), clamp(g), clamp(b)]
+                    .map(c => c.toString(16).padStart(2, '0'))
+                    .join('');
+            }
+
+            /** 判断颜色是否接近白色 (阈值 240) */
+            function isWhite(r, g, b, threshold) {
+                threshold = threshold || 240;
+                return r >= threshold && g >= threshold && b >= threshold;
+            }
+
+            /** 判断颜色是否透明 (alpha < 128) */
+            function isTransparent(a) {
+                return a < 128;
+            }
+
+            /** 从 ImageData 中提取指定区域的平均颜色 (RGB) */
+            function getAverageColor(imageData, x, y, width, height, imgW, imgH) {
+                const data = imageData.data;
+                const sw = imageData.width;
+                const sh = imageData.height;
+
+                // 计算实际像素边界 (浮点数映射)
+                const startX = Math.floor((x / width) * sw);
+                const endX = Math.floor(((x + 1) / width) * sw);
+                const startY = Math.floor((y / height) * sh);
+                const endY = Math.floor(((y + 1) / height) * sh);
+
+                const pxStart = Math.max(0, startX);
+                const pxEnd = Math.min(sw, endX);
+                const pyStart = Math.max(0, startY);
+                const pyEnd = Math.min(sh, endY);
+
+                let rTotal = 0,
+                    gTotal = 0,
+                    bTotal = 0,
+                    count = 0;
+                let hasTransparent = false;
+
+                for (let py = pyStart; py < pyEnd; py++) {
+                    for (let px = pxStart; px < pxEnd; px++) {
+                        const idx = (py * sw + px) * 4;
+                        const r = data[idx];
+                        const g = data[idx + 1];
+                        const b = data[idx + 2];
+                        const a = data[idx + 3];
+
+                        // 透明区域视为白色 (跳过统计，标记为透明)
+                        if (isTransparent(a)) {
+                            hasTransparent = true;
+                            continue;
+                        }
+
+                        rTotal += r;
+                        gTotal += g;
+                        bTotal += b;
+                        count++;
+                    }
+                }
+
+                // 如果全部透明或没有有效像素，返回白色
+                if (count === 0) {
+                    return { r: 255, g: 255, b: 255, isWhite: true };
+                }
+
+                const avgR = rTotal / count;
+                const avgG = gTotal / count;
+                const avgB = bTotal / count;
+
+                // 如果平均色接近白色，也视为白色
+                if (isWhite(avgR, avgG, avgB)) {
+                    return { r: 255, g: 255, b: 255, isWhite: true };
+                }
+
+                return { r: avgR, g: avgG, b: avgB, isWhite: false };
+            }
+
+            // ---------- 核心：生成网格数据 ----------
+            function generateGridData(image, rows, cols) {
+                // 将图片绘制到 canvas 以读取像素
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                // 保持图片比例，但为了像素读取，我们使用原始尺寸
+                const imgW = image.naturalWidth || image.width;
+                const imgH = image.naturalHeight || image.height;
+                canvas.width = imgW;
+                canvas.height = imgH;
+                ctx.drawImage(image, 0, 0, imgW, imgH);
+
+                let imageData;
+                try {
+                    imageData = ctx.getImageData(0, 0, imgW, imgH);
+                } catch (err) {
+                    // 跨域或其它错误
+                    console.error('读取图片像素失败:', err);
+                    throw new Error('无法读取图片像素数据，请确保图片格式正确且未受跨域限制。');
+                }
+
+                const total = rows * cols;
+                const colors = new Array(total);
+                const colorMap = new Map(); // key: hex 字符串, value: 数量
+
+                // 遍历每个网格
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const idx = r * cols + c;
+                        const avg = getAverageColor(imageData, c, r, cols, rows, imgW, imgH);
+                        const hex = rgbToHex(avg.r, avg.g, avg.b);
+                        colors[idx] = hex;
+                        colorMap.set(hex, (colorMap.get(hex) || 0) + 1);
+                    }
+                }
+
+                return { colors, rows, cols, colorMap };
+            }
+
+            // ---------- 渲染网格 (性能优化：分批插入) ----------
+            function renderGrid(gridData) {
+                const { colors, rows, cols } = gridData;
+
+                // 清除占位
+                gridPlaceholder.style.display = 'none';
+
+                // 清空容器，保留占位元素（但占位隐藏了）
+                gridContainer.innerHTML = '';
+                // 重新添加占位（但隐藏），以备后续清空时显示
+                const placeholderClone = gridPlaceholder.cloneNode(true);
+                placeholderClone.style.display = 'none';
+                gridContainer.appendChild(placeholderClone);
+
+                // 设置 grid 模板
+                gridContainer.style.gridTemplateColumns = `repeat(${cols}, 20px)`;
+                gridContainer.style.gridTemplateRows = `repeat(${rows}, 20px)`;
+
+                const total = rows * cols;
+                const BATCH_SIZE = 1200; // 每批插入的格子数
+                const fragment = document.createDocumentFragment();
+                let inserted = 0;
+
+                // 预创建所有 div 并设置背景色
+                function buildBatch(start, end) {
+                    for (let i = start; i < end; i++) {
+                        const div = document.createElement('div');
+                        div.className = 'cell';
+                        div.style.backgroundColor = colors[i];
+                        // 可添加 data 属性调试
+                        // div.dataset.index = i;
+                        fragment.appendChild(div);
+                    }
+                }
+
+                // 分批渲染
+                function renderNextBatch() {
+                    const end = Math.min(inserted + BATCH_SIZE, total);
+                    buildBatch(inserted, end);
+                    inserted = end;
+
+                    if (inserted >= total) {
+                        // 所有批次完成，一次性插入
+                        gridContainer.appendChild(fragment);
+                        // 更新图例
+                        renderLegend(gridData.colorMap);
+                        isGenerating = false;
+                        generateBtn.disabled = false;
+                        generateBtn.textContent = '✨ 生成图纸';
+                        downloadBtn.disabled = false;
+                    } else {
+                        // 继续下一批
+                        requestAnimationFrame(renderNextBatch);
+                    }
+                }
+
+                // 如果总数不大，直接一次性插入
+                if (total <= BATCH_SIZE) {
+                    buildBatch(0, total);
+                    gridContainer.appendChild(fragment);
+                    renderLegend(gridData.colorMap);
+                    isGenerating = false;
+                    generateBtn.disabled = false;
+                    generateBtn.textContent = '✨ 生成图纸';
+                    downloadBtn.disabled = false;
+                } else {
+                    // 分批插入，使用 requestAnimationFrame
+                    requestAnimationFrame(renderNextBatch);
+                }
+            }
+
+            // ---------- 渲染图例 ----------
+            function renderLegend(colorMap) {
+                // 清空
+                legendItems.innerHTML = '';
+
+                if (!colorMap || colorMap.size === 0) {
+                    legendItems.innerHTML = '<span style="color:#b8add6;font-size:14px;padding:6px 0;">暂无颜色数据</span>';
+                    legendCount.textContent = '(0 种颜色)';
+                    return;
+                }
+
+                // 按数量从多到少排序
+                const sorted = Array.from(colorMap.entries()).sort((a, b) => b[1] - a[1]);
+                const totalColors = sorted.length;
+                legendCount.textContent = `(${totalColors} 种颜色)`;
+
+                for (const [hex, count] of sorted) {
+                    const item = document.createElement('div');
+                    item.className = 'legend-item';
+
+                    const swatch = document.createElement('span');
+                    swatch.className = 'color-swatch';
+                    swatch.style.backgroundColor = hex;
+
+                    const hexSpan = document.createElement('span');
+                    hexSpan.className = 'color-hex';
+                    hexSpan.textContent = hex;
+
+                    const countSpan = document.createElement('span');
+                    countSpan.className = 'color-count';
+                    countSpan.textContent = `${count} 个`;
+
+                    item.appendChild(swatch);
+                    item.appendChild(hexSpan);
+                    item.appendChild(countSpan);
+                    legendItems.appendChild(item);
+                }
+            }
+
+            // ---------- 下载图纸 (PNG) ----------
+            function downloadGridAsPNG(gridData) {
+                if (!gridData) {
+                    alert('请先生成图纸！');
+                    return;
+                }
+
+                const { colors, rows, cols, colorMap } = gridData;
+                const CELL_SIZE = 20;
+                const GAP = 1;
+                const BORDER_WIDTH = 6;
+                const LEGEND_ITEM_HEIGHT = 32;
+                const LEGEND_PADDING = 20;
+                const LEGEND_COLS = 6; // 图例每行显示几个
+
+                // 计算网格尺寸
+                const gridW = cols * CELL_SIZE + (cols - 1) * GAP;
+                const gridH = rows * CELL_SIZE + (rows - 1) * GAP;
+                const totalW = gridW + BORDER_WIDTH * 2;
+                const totalH = gridH;
+
+                // 图例区域
+                const sortedColors = Array.from(colorMap.entries()).sort((a, b) => b[1] - a[1]);
+                const legendCount = sortedColors.length;
+                const legendRows = Math.ceil(legendCount / LEGEND_COLS);
+                const legendH = legendRows * LEGEND_ITEM_HEIGHT + LEGEND_PADDING * 2;
+
+                // Canvas 总尺寸
+                const canvasW = Math.max(totalW, 400);
+                const canvasH = totalH + legendH + 20;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = canvasW;
+                canvas.height = canvasH;
+                const ctx = canvas.getContext('2d');
+
+                // ---- 1. 绘制背景 (白色) ----
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvasW, canvasH);
+
+                // ---- 2. 绘制网格 ----
+                // 先绘制灰色背景 (网格线)
+                ctx.fillStyle = '#d5cee2';
+                ctx.fillRect(BORDER_WIDTH, 0, gridW, gridH);
+
+                // 绘制每个格子
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        const idx = r * cols + c;
+                        const hex = colors[idx];
+                        const x = BORDER_WIDTH + c * (CELL_SIZE + GAP);
+                        const y = r * (CELL_SIZE + GAP);
+                        ctx.fillStyle = hex;
+                        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
+                    }
+                }
+
+                // ---- 3. 绘制左右紫色边框 (覆盖在网格之上) ----
+                ctx.fillStyle = '#8b5cf6';
+                // 左边框
+                ctx.fillRect(0, 0, BORDER_WIDTH, gridH);
+                // 右边框
+                ctx.fillRect(BORDER_WIDTH + gridW, 0, BORDER_WIDTH, gridH);
+
+                // ---- 4. 绘制图例 ----
+                const legendY = gridH + 20;
+                // 图例背景
+                ctx.fillStyle = '#faf8fc';
+                ctx.shadowColor = 'rgba(0,0,0,0.04)';
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetY = 2;
+                ctx.beginPath();
+                ctx.roundRect(10, legendY, canvasW - 20, legendH, 12);
+                ctx.fill();
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+
+                // 图例标题
+                ctx.fillStyle = '#2d2a3a';
+                ctx.font = 'bold 16px "Segoe UI", "PingFang SC", sans-serif';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'top';
+                ctx.fillText('🎨 颜色图例', 24, legendY + 10);
+
+                // 绘制每个颜色项
+                const itemWidth = (canvasW - 40 - (LEGEND_COLS - 1) * 12) / LEGEND_COLS;
+                const startX = 24;
+                const startY = legendY + 40;
+
+                for (let i = 0; i < sortedColors.length; i++) {
+                    const [hex, count] = sortedColors[i];
+                    const col = i % LEGEND_COLS;
+                    const row = Math.floor(i / LEGEND_COLS);
+                    const x = startX + col * (itemWidth + 12);
+                    const y = startY + row * LEGEND_ITEM_HEIGHT;
+
+                    // 色块
+                    ctx.fillStyle = hex;
+                    ctx.shadowColor = 'rgba(0,0,0,0.06)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetY = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, 22, 22, 4);
+                    ctx.fill();
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#e9e4f2';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, 22, 22, 4);
+                    ctx.stroke();
+
+                    // 十六进制码
+                    ctx.fillStyle = '#4b4560';
+                    ctx.font = '600 12px "SF Mono", "Menlo", monospace';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(hex, x + 28, y + 11);
+
+                    // 数量
+                    ctx.fillStyle = '#8b85a0';
+                    ctx.font = '12px "Segoe UI", "PingFang SC", sans-serif';
+                    const countText = `· ${count} 个`;
+                    const hexWidth = ctx.measureText(hex).width;
+                    ctx.fillText(countText, x + 28 + hexWidth + 6, y + 11);
+                }
+
+                // ---- 导出 ----
+                try {
+                    const link = document.createElement('a');
+                    link.download = `拼豆图纸_${rows}x${cols}_${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch (err) {
+                    console.error('导出图片失败:', err);
+                    alert('导出图片失败，请重试或使用其他浏览器。');
+                }
+            }
+
+            // 辅助: Canvas roundRect
+            if (!CanvasRenderingContext2D.prototype.roundRect) {
+                CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, radii) {
+                    const r = typeof radii === 'number' ? radii : (radii || 0);
+                    this.moveTo(x + r, y);
+                    this.lineTo(x + w - r, y);
+                    this.quadraticCurveTo(x + w, y, x + w, y + r);
+                    this.lineTo(x + w, y + h - r);
+                    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    this.lineTo(x + r, y + h);
+                    this.quadraticCurveTo(x, y + h, x, y + h - r);
+                    this.lineTo(x, y + r);
+                    this.quadraticCurveTo(x, y, x + r, y);
+                    this.closePath();
+                    return this;
+                };
+            }
+
+            // ---------- 主流程：生成图纸 ----------
+            function handleGenerate() {
+                if (isGenerating) return;
+
+                if (!uploadedImage) {
+                    alert('请先上传一张图片！');
+                    return;
+                }
+
+                const rows = parseInt(rowsInput.value, 10);
+                const cols = parseInt(colsInput.value, 10);
+
+                if (isNaN(rows) || rows < 1 || isNaN(cols) || cols < 1) {
+                    alert('行数和列数必须为正整数！');
+                    return;
+                }
+
+                if (rows > 300 || cols > 300) {
+                    if (!confirm(`您设置的网格为 ${rows}×${cols} (共 ${rows * cols} 个格子)，数量较大可能影响性能，确定继续吗？`)) {
+                        return;
+                    }
+                }
+
+                // 锁定UI
+                isGenerating = true;
+                generateBtn.disabled = true;
+                generateBtn.textContent = '⏳ 生成中...';
+                downloadBtn.disabled = true;
+
+                // 使用 setTimeout 让 UI 先更新，避免阻塞
+                setTimeout(() => {
+                    try {
+                        const gridData = generateGridData(uploadedImage, rows, cols);
+                        currentGridData = gridData;
+                        renderGrid(gridData);
+                    } catch (err) {
+                        console.error(err);
+                        alert('生成图纸失败：' + err.message);
+                        isGenerating = false;
+                        generateBtn.disabled = false;
+                        generateBtn.textContent = '✨ 生成图纸';
+                        downloadBtn.disabled = false;
+                    }
+                }, 50);
+            }
+
+            // ---------- 图片上传处理 ----------
+            function handleFileUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                // 检查是否为图片
+                if (!file.type.startsWith('image/')) {
+                    alert('请上传图片文件！');
+                    fileInput.value = '';
+                    return;
+                }
+
+                // 显示文件名
+                fileName.textContent = file.name.length > 20 ? file.name.slice(0, 18) + '…' : file.name;
+
+                const reader = new FileReader();
+                reader.onload = function(ev) {
+                    const img = new Image();
+                    img.onload = function() {
+                        uploadedImage = img;
+
+                        // 预览
+                        previewImg.src = ev.target.result;
+                        previewImg.style.display = 'block';
+                        previewPlaceholder.style.display = 'none';
+                        imageInfo.textContent = `${img.naturalWidth || img.width} × ${img.naturalHeight || img.height}`;
+
+                        // 清空旧的图纸
+                        clearGrid();
+                    };
+                    img.onerror = function() {
+                        alert('图片加载失败，请尝试其他图片。');
+                        uploadedImage = null;
+                        fileName.textContent = '未选择';
+                        previewImg.style.display = 'none';
+                        previewPlaceholder.style.display = 'block';
+                        imageInfo.textContent = '';
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.onerror = function() {
+                    alert('读取文件失败，请重试。');
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // ---------- 清空图纸 ----------
+            function clearGrid() {
+                gridContainer.innerHTML = '';
+                const clone = gridPlaceholder.cloneNode(true);
+                clone.style.display = 'flex';
+                gridContainer.appendChild(clone);
+                legendItems.innerHTML = '<span style="color:#b8add6;font-size:14px;padding:6px 0;">暂无数据，生成图纸后显示</span>';
+                legendCount.textContent = '(0 种颜色)';
+                currentGridData = null;
+                downloadBtn.disabled = true;
+            }
+
+            // ---------- 事件绑定 ----------
+            fileInput.addEventListener('change', handleFileUpload);
+
+            generateBtn.addEventListener('click', handleGenerate);
+
+            downloadBtn.addEventListener('click', function() {
+                if (currentGridData) {
+                    downloadGridAsPNG(currentGridData);
+                } else {
+                    alert('请先生成图纸！');
+                }
+            });
+
+            // 回车键触发生成
+            rowsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleGenerate(); });
+            colsInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleGenerate(); });
+
+            // 初始化占位状态
+            downloadBtn.disabled = true;
+
+            // ---------- 额外：如果用户重新上传图片，自动清空图纸 ----------
+            // 已经通过 clearGrid 在图片加载时清空
+
+            // 暴露一些状态到控制台便于调试 (非必须)
+            console.log('🧩 拼豆图纸工具已加载。上传图片并设置行列数后点击「生成图纸」。');
+
+        })();
+    </script>
+
+</body>
+</html>
