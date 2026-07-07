@@ -5,500 +5,80 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>多图层编辑器</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #f0f2f6;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            padding: 16px;
-            touch-action: manipulation;
-        }
-        .container {
-            max-width: 860px;
-            width: 100%;
-            background: #ffffff;
-            padding: 20px 18px 28px;
-        }
-        .upload-area {
-            border: 2px dashed #d0d7e2;
-            border-radius: 12px;
-            padding: 12px 14px;
-            text-align: center;
-            cursor: pointer;
-            background: #fafcff;
-            margin-bottom: 14px;
-            transition: background 0.2s, border-color 0.2s;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .upload-area:active {
-            background: #eaf1fe;
-            border-color: #7a8ba3;
-        }
-        .upload-area label {
-            display: block;
-            font-size: 15px;
-            color: #3d4a5c;
-            font-weight: 450;
-            cursor: pointer;
-        }
-        .upload-area label span {
-            display: inline-block;
-            background: #e6ecf5;
-            padding: 5px 16px;
-            border-radius: 40px;
-            font-weight: 500;
-            color: #1f2a3a;
-            margin-top: 4px;
-        }
-        #fileInput {
-            display: none;
-        }
-        .canvas-wrapper {
-            position: relative;
-            background: #eef0f4;
-            border-radius: 12px;
-            overflow: hidden;
-            touch-action: none;
-            min-height: 220px;
-        }
-        #imageCanvas {
-            display: block;
-            max-width: 100%;
-            max-height: 520px;
-            cursor: default;
-            background: #eef0f4;
-            width: auto;
-            height: auto;
-            touch-action: none;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-        }
-        #overlayCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            display: none;
-        }
-        .zoom-indicator {
-            position: absolute;
-            top: 12px;
-            left: 14px;
-            background: rgba(20, 28, 40, 0.7);
-            backdrop-filter: blur(4px);
-            color: #f0f4fc;
-            padding: 4px 12px;
-            border-radius: 30px;
-            font-size: 13px;
-            font-weight: 500;
-            font-family: "SF Mono", "Menlo", monospace;
-            pointer-events: none;
-            user-select: none;
-            opacity: 0;
-            transition: opacity 0.25s ease;
-            z-index: 2;
-        }
-        .zoom-indicator.show {
-            opacity: 1;
-        }
-        .hint-msg {
-            margin: 8px 0 0 4px;
-            font-size: 13px;
-            color: #7a8aa0;
-            user-select: none;
-        }
-        .info-section {
-            margin: 14px 0 18px;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px 24px;
-            background: #f8faff;
-            border-radius: 12px;
-            padding: 10px 14px;
-        }
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 0;
-            border-bottom: 1px solid #eef2f8;
-            font-size: 14px;
-        }
-        .info-item .label {
-            color: #7c8aa0;
-            font-weight: 450;
-        }
-        .info-item .value {
-            color: #1a2330;
-            font-weight: 500;
-            font-family: "SF Mono", "Menlo", monospace;
-            font-size: 13px;
-            text-align: right;
-        }
-        .color-preview {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 6px;
-            padding: 0 14px;
-        }
-        .color-swatch {
-            width: 38px;
-            height: 38px;
-            border-radius: 12px;
-            border: 1px solid #dee5ef;
-            flex-shrink: 0;
-            background: #888;
-        }
-        .color-hex-large {
-            font-size: 18px;
-            font-weight: 500;
-            color: #1a2330;
-            letter-spacing: 0.5px;
-            word-break: break-all;
-        }
-        .export-section {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 4px;
-        }
-        .export-btn {
-            flex: 1;
-            min-width: 68px;
-            padding: 12px 0;
-            border: none;
-            border-radius: 14px;
-            background: #edf0f6;
-            color: #1f2a3a;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.18s, transform 0.1s;
-            font-family: inherit;
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-        .export-btn:active {
-            transform: scale(0.94);
-            background: #d5dce6;
-        }
-        .export-btn[data-format="png"] {
-            background: #e3eaf7;
-            color: #1c3b6b;
-        }
-        .export-btn[data-format="jpg"] {
-            background: #f7ede6;
-            color: #6b3d1c;
-        }
-        .export-btn[data-format="webp"] {
-            background: #e6f7ed;
-            color: #1c6b3d;
-        }
-        .export-btn[data-format="bmp"] {
-            background: #efe6f7;
-            color: #4a1c6b;
-        }
-        .export-btn:active[data-format="png"] {
-            background: #c8d6ed;
-        }
-        .export-btn:active[data-format="jpg"] {
-            background: #edd5c4;
-        }
-        .export-btn:active[data-format="webp"] {
-            background: #c4edcf;
-        }
-        .export-btn:active[data-format="bmp"] {
-            background: #d9c4ed;
-        }
-        .advanced-panel {
-            margin-top: 14px;
-            padding: 16px 14px 18px;
-            background: #f8faff;
-            border-radius: 16px;
-            border: 1px solid #e6ebf3;
-            max-height: 650px;
-            overflow-y: auto;
-        }
-        .adv-group {
-            margin-bottom: 16px;
-        }
-        .adv-group-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #2c3e5a;
-            margin-bottom: 8px;
-            letter-spacing: 0.3px;
-        }
-        .adv-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 6px;
-        }
-        .adv-row label {
-            font-size: 13px;
-            color: #4a5a72;
-            min-width: 40px;
-        }
-        .adv-row input[type="number"] {
-            width: 70px;
-            padding: 5px 8px;
-            border: 1px solid #d0d7e2;
-            border-radius: 8px;
-            font-size: 13px;
-            background: #fff;
-            font-family: inherit;
-        }
-        .adv-row input[type="number"]:focus {
-            outline: none;
-            border-color: #7a8ba3;
-        }
-        .adv-row input[type="range"] {
-            flex: 1;
-            min-width: 100px;
-            accent-color: #3d6b9b;
-        }
-        .adv-row .value-label {
-            min-width: 36px;
-            font-size: 13px;
-            color: #3d4a5c;
-            font-weight: 500;
-        }
-        .adv-btn {
-            padding: 6px 18px;
-            border: none;
-            border-radius: 30px;
-            background: #e6ecf5;
-            font-size: 13px;
-            font-weight: 500;
-            color: #1f2a3a;
-            cursor: pointer;
-            transition: background 0.15s;
-            font-family: inherit;
-        }
-        .adv-btn:active {
-            background: #cdd6e3;
-        }
-        .adv-btn.primary {
-            background: #2c3e5a;
-            color: #fff;
-        }
-        .adv-btn.primary:active {
-            background: #1a2a3f;
-        }
-        .adv-btn.danger {
-            background: #e8d5d5;
-            color: #7a3a3a;
-        }
-        .adv-btn.danger:active {
-            background: #dbbdbd;
-        }
-        .adv-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 13px;
-            color: #4a5a72;
-        }
-        .adv-checkbox input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: #2c3e5a;
-        }
-        .layer-list {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            margin-top: 4px;
-            max-height: 180px;
-            overflow-y: auto;
-            border: 1px solid #e2e6ee;
-            border-radius: 12px;
-            padding: 6px 8px;
-            background: #fff;
-        }
-        .layer-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 6px 8px;
-            border-radius: 10px;
-            background: #fafcff;
-            border: 1px solid #eef2f8;
-            transition: background 0.15s, border-color 0.15s;
-            user-select: none;
-        }
-        .layer-item.selected {
-            border-color: #2c3e5a;
-            background: #eaf1fe;
-        }
-        .layer-item .thumb {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            object-fit: cover;
-            background: #eef0f4;
-            border: 1px solid #d0d7e2;
-            flex-shrink: 0;
-        }
-        .layer-item .layer-name {
-            flex: 1;
-            font-size: 13px;
-            font-weight: 500;
-            color: #1f2a3a;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        .layer-item .layer-actions {
-            display: flex;
-            gap: 2px;
-            align-items: center;
-        }
-        .layer-item .layer-actions button {
-            background: none;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            padding: 2px 4px;
-            border-radius: 6px;
-            transition: background 0.1s;
-            line-height: 1;
-            color: #2c3e5a;
-        }
-        .layer-item .layer-actions button:active {
-            background: #d0d7e2;
-        }
-        .layer-item .layer-actions .vis-toggle {
-            font-size: 18px;
-        }
-        .layer-item .layer-actions .del-btn {
-            color: #b33;
-        }
-        .layer-item .layer-actions .move-btn {
-            font-size: 14px;
-            color: #4a5a72;
-            padding: 0 2px;
-        }
-        .layer-item .layer-actions .move-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-        .layer-controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 6px;
-            align-items: center;
-        }
-        .layer-controls .adv-row {
-            margin-bottom: 0;
-        }
-        .tool-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            margin-top: 4px;
-        }
-        .tool-group .adv-btn {
-            min-width: 80px;
-        }
-        .tool-group .adv-btn.active {
-            background: #2c3e5a;
-            color: #fff;
-        }
-        .erase-tool {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .erase-tool label {
-            font-size: 13px;
-            color: #4a5a72;
-        }
-        .erase-tool input[type="range"] {
-            width: 120px;
-            accent-color: #3d6b9b;
-        }
-        .erase-tool .size-val {
-            min-width: 30px;
-            font-size: 13px;
-            font-weight: 500;
-        }
-        @media (max-width: 500px) {
-            .container {
-                padding: 12px 10px 16px;
-            }
-            .info-grid {
-                grid-template-columns: 1fr;
-                gap: 0;
-                padding: 6px 12px;
-            }
-            .info-item {
-                font-size: 13px;
-                padding: 4px 0;
-            }
-            .export-btn {
-                font-size: 14px;
-                padding: 11px 0;
-                min-width: 58px;
-            }
-            .color-hex-large {
-                font-size: 16px;
-            }
-            .adv-row input[type="number"] {
-                width: 60px;
-            }
-            .adv-row {
-                gap: 6px;
-            }
-            .layer-item {
-                padding: 4px 6px;
-            }
-            .layer-item .thumb {
-                width: 28px;
-                height: 28px;
-            }
-            .erase-tool input[type="range"] {
-                width: 80px;
-            }
-        }
-        @media (hover: none) {
-            .export-btn:hover {
-                background: inherit;
-            }
-            .export-btn:hover[data-format="png"] {
-                background: #e3eaf7;
-            }
-            .export-btn:hover[data-format="jpg"] {
-                background: #f7ede6;
-            }
-            .export-btn:hover[data-format="webp"] {
-                background: #e6f7ed;
-            }
-            .export-btn:hover[data-format="bmp"] {
-                background: #efe6f7;
-            }
-            .upload-area:hover {
-                background: #fafcff;
-                border-color: #d0d7e2;
-            }
-        }
+        /* 样式与之前相同，未改动，此处省略以节省空间，实际已包含完整样式 */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { min-height:100vh; display:flex; justify-content:center; align-items:center; background:#f0f2f6; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding:16px; touch-action:manipulation; }
+        .container { max-width:860px; width:100%; background:#ffffff; padding:20px 18px 28px; }
+        .upload-area { border:2px dashed #d0d7e2; border-radius:12px; padding:12px 14px; text-align:center; cursor:pointer; background:#fafcff; margin-bottom:14px; transition:background 0.2s, border-color 0.2s; -webkit-tap-highlight-color:transparent; }
+        .upload-area:active { background:#eaf1fe; border-color:#7a8ba3; }
+        .upload-area label { display:block; font-size:15px; color:#3d4a5c; font-weight:450; cursor:pointer; }
+        .upload-area label span { display:inline-block; background:#e6ecf5; padding:5px 16px; border-radius:40px; font-weight:500; color:#1f2a3a; margin-top:4px; }
+        #fileInput { display:none; }
+        .canvas-wrapper { position:relative; background:#eef0f4; border-radius:12px; overflow:hidden; touch-action:none; min-height:220px; }
+        #imageCanvas { display:block; max-width:100%; max-height:520px; cursor:default; background:#eef0f4; width:auto; height:auto; touch-action:none; -webkit-touch-callout:none; -webkit-user-select:none; }
+        #overlayCanvas { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; display:none; }
+        .zoom-indicator { position:absolute; top:12px; left:14px; background:rgba(20,28,40,0.7); backdrop-filter:blur(4px); color:#f0f4fc; padding:4px 12px; border-radius:30px; font-size:13px; font-weight:500; font-family:"SF Mono","Menlo",monospace; pointer-events:none; user-select:none; opacity:0; transition:opacity 0.25s ease; z-index:2; }
+        .zoom-indicator.show { opacity:1; }
+        .hint-msg { margin:8px 0 0 4px; font-size:13px; color:#7a8aa0; user-select:none; }
+        .info-section { margin:14px 0 18px; }
+        .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 24px; background:#f8faff; border-radius:12px; padding:10px 14px; }
+        .info-item { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid #eef2f8; font-size:14px; }
+        .info-item .label { color:#7c8aa0; font-weight:450; }
+        .info-item .value { color:#1a2330; font-weight:500; font-family:"SF Mono","Menlo",monospace; font-size:13px; text-align:right; }
+        .color-preview { display:flex; align-items:center; gap:14px; margin-bottom:6px; padding:0 14px; }
+        .color-swatch { width:38px; height:38px; border-radius:12px; border:1px solid #dee5ef; flex-shrink:0; background:#888; }
+        .color-hex-large { font-size:18px; font-weight:500; color:#1a2330; letter-spacing:0.5px; word-break:break-all; }
+        .export-section { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+        .export-btn { flex:1; min-width:68px; padding:12px 0; border:none; border-radius:14px; background:#edf0f6; color:#1f2a3a; font-size:15px; font-weight:500; cursor:pointer; transition:background 0.18s, transform 0.1s; font-family:inherit; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+        .export-btn:active { transform:scale(0.94); background:#d5dce6; }
+        .export-btn[data-format="png"] { background:#e3eaf7; color:#1c3b6b; }
+        .export-btn[data-format="jpg"] { background:#f7ede6; color:#6b3d1c; }
+        .export-btn[data-format="webp"] { background:#e6f7ed; color:#1c6b3d; }
+        .export-btn[data-format="bmp"] { background:#efe6f7; color:#4a1c6b; }
+        .export-btn:active[data-format="png"] { background:#c8d6ed; }
+        .export-btn:active[data-format="jpg"] { background:#edd5c4; }
+        .export-btn:active[data-format="webp"] { background:#c4edcf; }
+        .export-btn:active[data-format="bmp"] { background:#d9c4ed; }
+        .advanced-panel { margin-top:14px; padding:16px 14px 18px; background:#f8faff; border-radius:16px; border:1px solid #e6ebf3; max-height:650px; overflow-y:auto; }
+        .adv-group { margin-bottom:16px; }
+        .adv-group-title { font-size:14px; font-weight:600; color:#2c3e5a; margin-bottom:8px; letter-spacing:0.3px; }
+        .adv-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+        .adv-row label { font-size:13px; color:#4a5a72; min-width:40px; }
+        .adv-row input[type="number"] { width:70px; padding:5px 8px; border:1px solid #d0d7e2; border-radius:8px; font-size:13px; background:#fff; font-family:inherit; }
+        .adv-row input[type="number"]:focus { outline:none; border-color:#7a8ba3; }
+        .adv-row input[type="range"] { flex:1; min-width:100px; accent-color:#3d6b9b; }
+        .adv-row .value-label { min-width:36px; font-size:13px; color:#3d4a5c; font-weight:500; }
+        .adv-btn { padding:6px 18px; border:none; border-radius:30px; background:#e6ecf5; font-size:13px; font-weight:500; color:#1f2a3a; cursor:pointer; transition:background 0.15s; font-family:inherit; }
+        .adv-btn:active { background:#cdd6e3; }
+        .adv-btn.primary { background:#2c3e5a; color:#fff; }
+        .adv-btn.primary:active { background:#1a2a3f; }
+        .adv-btn.danger { background:#e8d5d5; color:#7a3a3a; }
+        .adv-btn.danger:active { background:#dbbdbd; }
+        .adv-checkbox { display:flex; align-items:center; gap:6px; font-size:13px; color:#4a5a72; }
+        .adv-checkbox input[type="checkbox"] { width:16px; height:16px; accent-color:#2c3e5a; }
+        .layer-list { display:flex; flex-direction:column; gap:6px; margin-top:4px; max-height:180px; overflow-y:auto; border:1px solid #e2e6ee; border-radius:12px; padding:6px 8px; background:#fff; }
+        .layer-item { display:flex; align-items:center; gap:10px; padding:6px 8px; border-radius:10px; background:#fafcff; border:1px solid #eef2f8; transition:background 0.15s, border-color 0.15s; user-select:none; }
+        .layer-item.selected { border-color:#2c3e5a; background:#eaf1fe; }
+        .layer-item .thumb { width:36px; height:36px; border-radius:6px; object-fit:cover; background:#eef0f4; border:1px solid #d0d7e2; flex-shrink:0; }
+        .layer-item .layer-name { flex:1; font-size:13px; font-weight:500; color:#1f2a3a; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .layer-item .layer-actions { display:flex; gap:2px; align-items:center; }
+        .layer-item .layer-actions button { background:none; border:none; font-size:16px; cursor:pointer; padding:2px 4px; border-radius:6px; transition:background 0.1s; line-height:1; color:#2c3e5a; }
+        .layer-item .layer-actions button:active { background:#d0d7e2; }
+        .layer-item .layer-actions .vis-toggle { font-size:18px; }
+        .layer-item .layer-actions .del-btn { color:#b33; }
+        .layer-item .layer-actions .move-btn { font-size:14px; color:#4a5a72; padding:0 2px; }
+        .layer-item .layer-actions .move-btn:disabled { opacity:0.3; cursor:not-allowed; }
+        .layer-controls { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; align-items:center; }
+        .layer-controls .adv-row { margin-bottom:0; }
+        .tool-group { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:4px; }
+        .tool-group .adv-btn { min-width:80px; }
+        .tool-group .adv-btn.active { background:#2c3e5a; color:#fff; }
+        .erase-tool { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .erase-tool label { font-size:13px; color:#4a5a72; }
+        .erase-tool input[type="range"] { width:120px; accent-color:#3d6b9b; }
+        .erase-tool .size-val { min-width:30px; font-size:13px; font-weight:500; }
+        @media (max-width:500px) { .container { padding:12px 10px 16px; } .info-grid { grid-template-columns:1fr; gap:0; padding:6px 12px; } .info-item { font-size:13px; padding:4px 0; } .export-btn { font-size:14px; padding:11px 0; min-width:58px; } .color-hex-large { font-size:16px; } .adv-row input[type="number"] { width:60px; } .adv-row { gap:6px; } .layer-item { padding:4px 6px; } .layer-item .thumb { width:28px; height:28px; } .erase-tool input[type="range"] { width:80px; } }
+        @media (hover:none) { .export-btn:hover { background:inherit; } .export-btn:hover[data-format="png"] { background:#e3eaf7; } .export-btn:hover[data-format="jpg"] { background:#f7ede6; } .export-btn:hover[data-format="webp"] { background:#e6f7ed; } .export-btn:hover[data-format="bmp"] { background:#efe6f7; } .upload-area:hover { background:#fafcff; border-color:#d0d7e2; } }
     </style>
 </head>
 <body>
@@ -674,6 +254,7 @@
             let brushSize = 20;
             let isErasing = false;
 
+            // 鼠标拖拽状态
             let isDraggingView = false;
             let dragStartX = 0,
                 dragStartY = 0;
@@ -689,15 +270,13 @@
                 dragLayerOrigY = 0;
             let draggedLayerId = null;
 
-            // ========== 颜色转换 ==========
-            function componentToHex(c) {
-                const hex = c.toString(16);
-                return hex.length === 1 ? '0' + hex : hex;
-            }
+            // 触摸专用状态 (区分触摸与鼠标)
+            let touchIdentifier = null; // 用于跟踪触摸点
 
-            function rgbToHex(r, g, b) {
-                return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b);
-            }
+            // ========== 颜色转换 ==========
+            function componentToHex(c) { const hex = c.toString(16); return hex.length === 1 ? '0' + hex : hex; }
+
+            function rgbToHex(r, g, b) { return '#' + componentToHex(r) + componentToHex(g) + componentToHex(b); }
 
             function rgbToHsl(r, g, b) {
                 r /= 255;
@@ -706,9 +285,7 @@
                 const max = Math.max(r, g, b);
                 const min = Math.min(r, g, b);
                 let h, s, l = (max + min) / 2;
-                if (max === min) {
-                    h = s = 0;
-                } else {
+                if (max === min) { h = s = 0; } else {
                     const d = max - min;
                     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
                     switch (max) {
@@ -855,9 +432,13 @@
                 selectLayer(id);
             }
 
+            // 修复图层顺序显示：面板从上到下对应从顶层到底层
             function updateLayerList() {
                 layerList.innerHTML = '';
-                layers.forEach((layer, index) => {
+                // 反向遍历，使得面板第一个为最顶层（索引最大）
+                for (let i = layers.length - 1; i >= 0; i--) {
+                    const layer = layers[i];
+                    const index = i; // 实际索引
                     const div = document.createElement('div');
                     div.className = 'layer-item' + (layer.id === selectedLayerId ? ' selected' : '');
 
@@ -882,7 +463,7 @@
                     upBtn.className = 'move-btn';
                     upBtn.textContent = '▲';
                     upBtn.title = '上移图层';
-                    upBtn.disabled = (index === 0);
+                    upBtn.disabled = (index === layers.length - 1); // 最顶层不能上移
                     upBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         moveLayerUp(layer.id);
@@ -893,7 +474,7 @@
                     downBtn.className = 'move-btn';
                     downBtn.textContent = '▼';
                     downBtn.title = '下移图层';
-                    downBtn.disabled = (index === layers.length - 1);
+                    downBtn.disabled = (index === 0); // 最底层不能下移
                     downBtn.addEventListener('click', function(e) {
                         e.stopPropagation();
                         moveLayerDown(layer.id);
@@ -929,7 +510,7 @@
                     });
 
                     layerList.appendChild(div);
-                });
+                }
                 const sel = getSelectedLayer();
                 if (sel) {
                     layerX.value = sel.x;
@@ -985,6 +566,7 @@
                 ctx.translate(viewTransform.offsetX, viewTransform.offsetY);
                 ctx.scale(viewTransform.scale, viewTransform.scale);
 
+                // 按照layers数组顺序绘制（索引从小到大，后面的覆盖前面的）
                 layers.forEach(layer => {
                     if (!layer.visible) return;
                     const lw = layer.canvas.width;
@@ -1092,7 +674,6 @@
                     return;
                 }
 
-                // 1. 计算所有可见图层有像素内容的并集边界 (世界坐标)
                 let globalMinX = Infinity,
                     globalMinY = Infinity;
                 let globalMaxX = -Infinity,
@@ -1105,7 +686,6 @@
                     const w = layer.canvas.width;
                     const h = layer.canvas.height;
 
-                    // 扫描图层像素，找到不透明像素的边界 (本地坐标)
                     const imageData = layer.canvas.getContext('2d').getImageData(0, 0, w, h);
                     const data = imageData.data;
                     let minX = w,
@@ -1113,11 +693,10 @@
                         maxX = -1,
                         maxY = -1;
 
-                    // 快速扫描: 逐行逐列检查透明度
                     for (let y = 0; y < h; y++) {
                         for (let x = 0; x < w; x++) {
                             const idx = (y * w + x) * 4;
-                            if (data[idx + 3] > 0) { // 不透明像素
+                            if (data[idx + 3] > 0) {
                                 if (x < minX) minX = x;
                                 if (x > maxX) maxX = x;
                                 if (y < minY) minY = y;
@@ -1126,10 +705,8 @@
                         }
                     }
 
-                    // 如果没有不透明像素，跳过该图层
                     if (maxX < 0) return;
 
-                    // 本地边界框的四个角点
                     const corners = [
                         { x: minX, y: minY },
                         { x: maxX, y: minY },
@@ -1137,7 +714,6 @@
                         { x: maxX, y: maxY }
                     ];
 
-                    // 应用旋转和平移，转换到世界坐标
                     const angle = layer.rotation * Math.PI / 180;
                     const cosA = Math.cos(angle);
                     const sinA = Math.sin(angle);
@@ -1145,13 +721,10 @@
                     const cy = layer.y + h / 2;
 
                     corners.forEach(corner => {
-                        // 相对于图层中心
                         const dx = corner.x - w / 2;
                         const dy = corner.y - h / 2;
-                        // 旋转
                         const rx = dx * cosA - dy * sinA;
                         const ry = dx * sinA + dy * cosA;
-                        // 平移到世界坐标
                         const wx = cx + rx;
                         const wy = cy + ry;
                         if (wx < globalMinX) globalMinX = wx;
@@ -1168,7 +741,6 @@
                     return;
                 }
 
-                // 稍微扩展边界，避免边缘像素被裁切 (加1像素安全边距)
                 const padding = 0;
                 globalMinX -= padding;
                 globalMinY -= padding;
@@ -1183,7 +755,6 @@
                     return;
                 }
 
-                // 2. 创建输出 Canvas
                 const outCanvas = document.createElement('canvas');
                 outCanvas.width = outW;
                 outCanvas.height = outH;
@@ -1191,13 +762,11 @@
                 outCtx.imageSmoothingEnabled = true;
                 outCtx.imageSmoothingQuality = 'high';
 
-                // 对于 JPG，填充白色背景 (因为 JPG 不支持透明)
                 if (format === 'jpg') {
                     outCtx.fillStyle = '#FFFFFF';
                     outCtx.fillRect(0, 0, outW, outH);
                 }
 
-                // 3. 绘制每个可见图层
                 layers.forEach(layer => {
                     if (!layer.visible) return;
                     const lw = layer.canvas.width;
@@ -1221,7 +790,6 @@
                     outCtx.restore();
                 });
 
-                // 4. 导出
                 let mimeType = '',
                     ext = '';
                 switch (format) {
@@ -1317,134 +885,18 @@
                 overlayCtx.fill();
             }
 
-            // ========== 事件绑定 ==========
+            // ========== 事件绑定 (鼠标 + 触摸统一处理) ==========
 
-            fileInput.addEventListener('change', function(e) {
-                const files = this.files;
-                if (!files || files.length === 0) return;
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    if (!file.type.startsWith('image/')) continue;
-                    const reader = new FileReader();
-                    reader.onload = function(ev) {
-                        const img = new Image();
-                        img.onload = function() {
-                            const name = file.name || `图层 ${nextId}`;
-                            createLayer(img, name);
-                        };
-                        img.src = ev.target.result;
-                    };
-                    reader.readAsDataURL(file);
+            // 获取客户端坐标 (兼容鼠标和触摸)
+            function getClientPos(e) {
+                if (e.touches) {
+                    const touch = e.touches[0];
+                    return { clientX: touch.clientX, clientY: touch.clientY };
                 }
-                this.value = '';
-            });
-
-            uploadArea.addEventListener('click', function(e) {
-                if (e.target.tagName !== 'LABEL' && !e.target.closest('label')) {
-                    fileInput.click();
-                }
-            });
-
-            applyLayerPos.addEventListener('click', function() {
-                const layer = getSelectedLayer();
-                if (!layer) return;
-                const x = parseInt(layerX.value);
-                const y = parseInt(layerY.value);
-                const rot = parseFloat(layerRotation.value) || 0;
-                if (isNaN(x) || isNaN(y)) return;
-                layer.x = x;
-                layer.y = y;
-                layer.rotation = rot;
-                renderAll();
-                updateLayerList();
-            });
-
-            layerRotation.addEventListener('input', function() {
-                const layer = getSelectedLayer();
-                if (!layer) return;
-                const rot = parseFloat(this.value) || 0;
-                layer.rotation = rot;
-                renderAll();
-                updateLayerList();
-            });
-
-            deleteSelectedBtn.addEventListener('click', function() {
-                if (selectedLayerId === null) return;
-                deleteLayer(selectedLayerId);
-            });
-
-            function updateLayerFilters() {
-                const layer = getSelectedLayer();
-                if (!layer) return;
-                layer.filters.brightness = parseInt(brightnessSlider.value);
-                layer.filters.contrast = parseInt(contrastSlider.value);
-                layer.filters.saturation = parseInt(saturationSlider.value);
-                layer.filters.hue = parseInt(hueSlider.value);
-                brightnessVal.textContent = layer.filters.brightness + '%';
-                contrastVal.textContent = layer.filters.contrast + '%';
-                saturationVal.textContent = layer.filters.saturation + '%';
-                hueVal.textContent = layer.filters.hue + '°';
-                renderAll();
-                updateLayerList();
+                return { clientX: e.clientX, clientY: e.clientY };
             }
 
-            brightnessSlider.addEventListener('input', updateLayerFilters);
-            contrastSlider.addEventListener('input', updateLayerFilters);
-            saturationSlider.addEventListener('input', updateLayerFilters);
-            hueSlider.addEventListener('input', updateLayerFilters);
-
-            resetLayerFilters.addEventListener('click', function() {
-                const layer = getSelectedLayer();
-                if (!layer) return;
-                layer.filters = { brightness: 100, contrast: 100, saturation: 100, hue: 0 };
-                brightnessSlider.value = 100;
-                contrastSlider.value = 100;
-                saturationSlider.value = 100;
-                hueSlider.value = 0;
-                brightnessVal.textContent = '100%';
-                contrastVal.textContent = '100%';
-                saturationVal.textContent = '100%';
-                hueVal.textContent = '0°';
-                renderAll();
-                updateLayerList();
-            });
-
-            colorPickToggle.addEventListener('click', function() {
-                if (colorPickMode) setMode('select');
-                else {
-                    if (eraseMode) setMode('select');
-                    setMode('color');
-                }
-            });
-
-            eraseModeToggle.addEventListener('click', function() {
-                if (eraseMode) setMode('select');
-                else {
-                    if (colorPickMode) setMode('select');
-                    setMode('erase');
-                }
-            });
-
-            brushSizeSlider.addEventListener('input', function() {
-                brushSize = parseInt(this.value);
-                brushSizeVal.textContent = brushSize;
-                if (eraseMode) {
-                    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-                }
-            });
-
-            clearErasure.addEventListener('click', function() {
-                const layer = getSelectedLayer();
-                if (!layer) return;
-                const lctx = layer.canvas.getContext('2d');
-                lctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
-                lctx.drawImage(layer.image, 0, 0);
-                renderAll();
-                updateLayerList();
-            });
-
-            // ========== 画布交互 ==========
-
+            // 鼠标事件
             canvas.addEventListener('wheel', function(e) {
                 e.preventDefault();
                 const delta = e.deltaY > 0 ? -1 : 1;
@@ -1574,27 +1026,79 @@
                 }
             });
 
-            // 触摸支持
-            let touchStartDist = 0;
-            let touchStartScale = 1;
-            let touchStartOffsetX = 0,
-                touchStartOffsetY = 0;
+            // ========== 触摸事件 (手机适配) ==========
+
+            // 记录触摸点ID和状态
+            let activeTouchId = null;
+            let touchStartTime = 0;
 
             canvas.addEventListener('touchstart', function(e) {
-                if (e.touches.length === 1) {
-                    if (colorPickMode || eraseMode) return;
-                    const touch = e.touches[0];
-                    isDraggingView = true;
-                    dragStartX = touch.clientX;
-                    dragStartY = touch.clientY;
-                    dragStartOffsetX = viewTransform.offsetX;
-                    dragStartOffsetY = viewTransform.offsetY;
-                } else if (e.touches.length === 2) {
-                    const t1 = e.touches[0],
-                        t2 = e.touches[1];
+                e.preventDefault(); // 防止滚动
+                const touches = e.touches;
+                if (touches.length === 1) {
+                    const touch = touches[0];
+                    activeTouchId = touch.identifier;
+                    const clientX = touch.clientX,
+                        clientY = touch.clientY;
+
+                    // 取色模式
+                    if (colorPickMode) {
+                        getColorFromCanvas(clientX, clientY);
+                        return;
+                    }
+
+                    // 擦除模式
+                    if (eraseMode) {
+                        const layer = getSelectedLayer();
+                        if (!layer) return;
+                        const coord = getLayerCoord(layer, clientX, clientY);
+                        if (coord) {
+                            applyEraserAt(layer, coord.x, coord.y, brushSize);
+                            renderAll();
+                            updateLayerList();
+                            isErasing = true;
+                            // 记录触摸标识以便在touchmove中继续
+                            touchIdentifier = touch.identifier;
+                        }
+                        return;
+                    }
+
+                    // 选择/移动模式
+                    const layer = getSelectedLayer();
+                    if (!layer) {
+                        // 视图平移
+                        isDraggingView = true;
+                        dragStartX = clientX;
+                        dragStartY = clientY;
+                        dragStartOffsetX = viewTransform.offsetX;
+                        dragStartOffsetY = viewTransform.offsetY;
+                        canvas.style.cursor = 'grabbing';
+                        return;
+                    }
+                    const coord = getLayerCoord(layer, clientX, clientY);
+                    if (coord) {
+                        isDraggingLayer = true;
+                        draggedLayerId = layer.id;
+                        dragLayerStartX = clientX;
+                        dragLayerStartY = clientY;
+                        dragLayerOrigX = layer.x;
+                        dragLayerOrigY = layer.y;
+                        canvas.style.cursor = 'move';
+                    } else {
+                        isDraggingView = true;
+                        dragStartX = clientX;
+                        dragStartY = clientY;
+                        dragStartOffsetX = viewTransform.offsetX;
+                        dragStartOffsetY = viewTransform.offsetY;
+                        canvas.style.cursor = 'grabbing';
+                    }
+                } else if (touches.length === 2) {
+                    // 双指缩放
+                    const t1 = touches[0],
+                        t2 = touches[1];
                     const dx = t1.clientX - t2.clientX;
                     const dy = t1.clientY - t2.clientY;
-                    touchStartDist = Math.sqrt(dx * dx + dy * dy);
+                    lastTouchDist = Math.sqrt(dx * dx + dy * dy);
                     touchStartScale = viewTransform.scale;
                     touchStartOffsetX = viewTransform.offsetX;
                     touchStartOffsetY = viewTransform.offsetY;
@@ -1604,23 +1108,35 @@
 
             canvas.addEventListener('touchmove', function(e) {
                 e.preventDefault();
-                if (e.touches.length === 1 && isDraggingView) {
-                    const touch = e.touches[0];
-                    const dx = touch.clientX - dragStartX;
-                    const dy = touch.clientY - dragStartY;
-                    const rect = canvas.getBoundingClientRect();
-                    const scaleX = canvas.width / rect.width;
-                    const scaleY = canvas.height / rect.height;
-                    viewTransform.offsetX = dragStartOffsetX + dx * scaleX;
-                    viewTransform.offsetY = dragStartOffsetY + dy * scaleY;
-                    renderAll();
-                } else if (e.touches.length === 2 && isPinching) {
-                    const t1 = e.touches[0],
-                        t2 = e.touches[1];
+                const touches = e.touches;
+
+                // 擦除连续移动
+                if (eraseMode && isErasing && touches.length === 1) {
+                    const touch = touches[0];
+                    // 检查是否为同一个触摸点
+                    if (touch.identifier === touchIdentifier) {
+                        const layer = getSelectedLayer();
+                        if (!layer) return;
+                        const coord = getLayerCoord(layer, touch.clientX, touch.clientY);
+                        if (coord) {
+                            applyEraserAt(layer, coord.x, coord.y, brushSize);
+                            renderAll();
+                            updateLayerList();
+                            // 更新光标 (手机端不需要显示光标，但保留)
+                            updateEraseCursor(touch.clientX, touch.clientY);
+                        }
+                    }
+                    return;
+                }
+
+                // 缩放 (双指)
+                if (touches.length === 2 && isPinching) {
+                    const t1 = touches[0],
+                        t2 = touches[1];
                     const dx = t1.clientX - t2.clientX;
                     const dy = t1.clientY - t2.clientY;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    const scaleFactor = dist / touchStartDist;
+                    const scaleFactor = dist / lastTouchDist;
                     const newScale = Math.min(Math.max(touchStartScale * scaleFactor, 0.1), 10);
                     const centerX = (t1.clientX + t2.clientX) / 2;
                     const centerY = (t1.clientY + t2.clientY) / 2;
@@ -1635,17 +1151,208 @@
                     viewTransform.offsetX = mx - wx * newScale;
                     viewTransform.offsetY = my - wy * newScale;
                     renderAll();
+                    lastTouchDist = dist;
+                    return;
+                }
+
+                // 单指拖拽 (视图或图层)
+                if (touches.length === 1) {
+                    const touch = touches[0];
+                    const clientX = touch.clientX,
+                        clientY = touch.clientY;
+                    if (isDraggingView) {
+                        const dx = clientX - dragStartX;
+                        const dy = clientY - dragStartY;
+                        const rect = canvas.getBoundingClientRect();
+                        const scaleX = canvas.width / rect.width;
+                        const scaleY = canvas.height / rect.height;
+                        viewTransform.offsetX = dragStartOffsetX + dx * scaleX;
+                        viewTransform.offsetY = dragStartOffsetY + dy * scaleY;
+                        renderAll();
+                    } else if (isDraggingLayer) {
+                        const dx = clientX - dragLayerStartX;
+                        const dy = clientY - dragLayerStartY;
+                        const rect = canvas.getBoundingClientRect();
+                        const scaleX = canvas.width / rect.width;
+                        const scaleY = canvas.height / rect.height;
+                        const deltaX = dx * scaleX / viewTransform.scale;
+                        const deltaY = dy * scaleY / viewTransform.scale;
+                        const layer = layers.find(l => l.id === draggedLayerId);
+                        if (layer) {
+                            layer.x = dragLayerOrigX + deltaX;
+                            layer.y = dragLayerOrigY + deltaY;
+                            renderAll();
+                            updateLayerList();
+                            layerX.value = layer.x;
+                            layerY.value = layer.y;
+                        }
+                    }
                 }
             }, { passive: false });
 
-            canvas.addEventListener('touchend', function() {
+            canvas.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                // 结束擦除
+                if (isErasing) {
+                    isErasing = false;
+                    touchIdentifier = null;
+                }
+                // 结束拖拽
+                if (isDraggingView || isDraggingLayer) {
+                    isDraggingView = false;
+                    isDraggingLayer = false;
+                    draggedLayerId = null;
+                    canvas.style.cursor = 'default';
+                }
+                // 结束缩放
+                if (isPinching) {
+                    isPinching = false;
+                }
+                // 如果触摸点全部离开，重置状态
+                if (e.touches.length === 0) {
+                    // 如果有未完成的拖拽，也重置
+                    isDraggingView = false;
+                    isDraggingLayer = false;
+                    isErasing = false;
+                    touchIdentifier = null;
+                    canvas.style.cursor = 'default';
+                }
+            }, { passive: false });
+
+            canvas.addEventListener('touchcancel', function(e) {
+                e.preventDefault();
                 isDraggingView = false;
+                isDraggingLayer = false;
+                isErasing = false;
+                touchIdentifier = null;
                 isPinching = false;
+                canvas.style.cursor = 'default';
+            }, { passive: false });
+
+            // ========== 其他事件 ==========
+
+            fileInput.addEventListener('change', function(e) {
+                const files = this.files;
+                if (!files || files.length === 0) return;
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (!file.type.startsWith('image/')) continue;
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const name = file.name || `图层 ${nextId}`;
+                            createLayer(img, name);
+                        };
+                        img.src = ev.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+                this.value = '';
             });
 
-            canvas.addEventListener('touchcancel', function() {
-                isDraggingView = false;
-                isPinching = false;
+            uploadArea.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'LABEL' && !e.target.closest('label')) {
+                    fileInput.click();
+                }
+            });
+
+            applyLayerPos.addEventListener('click', function() {
+                const layer = getSelectedLayer();
+                if (!layer) return;
+                const x = parseInt(layerX.value);
+                const y = parseInt(layerY.value);
+                const rot = parseFloat(layerRotation.value) || 0;
+                if (isNaN(x) || isNaN(y)) return;
+                layer.x = x;
+                layer.y = y;
+                layer.rotation = rot;
+                renderAll();
+                updateLayerList();
+            });
+
+            layerRotation.addEventListener('input', function() {
+                const layer = getSelectedLayer();
+                if (!layer) return;
+                const rot = parseFloat(this.value) || 0;
+                layer.rotation = rot;
+                renderAll();
+                updateLayerList();
+            });
+
+            deleteSelectedBtn.addEventListener('click', function() {
+                if (selectedLayerId === null) return;
+                deleteLayer(selectedLayerId);
+            });
+
+            function updateLayerFilters() {
+                const layer = getSelectedLayer();
+                if (!layer) return;
+                layer.filters.brightness = parseInt(brightnessSlider.value);
+                layer.filters.contrast = parseInt(contrastSlider.value);
+                layer.filters.saturation = parseInt(saturationSlider.value);
+                layer.filters.hue = parseInt(hueSlider.value);
+                brightnessVal.textContent = layer.filters.brightness + '%';
+                contrastVal.textContent = layer.filters.contrast + '%';
+                saturationVal.textContent = layer.filters.saturation + '%';
+                hueVal.textContent = layer.filters.hue + '°';
+                renderAll();
+                updateLayerList();
+            }
+
+            brightnessSlider.addEventListener('input', updateLayerFilters);
+            contrastSlider.addEventListener('input', updateLayerFilters);
+            saturationSlider.addEventListener('input', updateLayerFilters);
+            hueSlider.addEventListener('input', updateLayerFilters);
+
+            resetLayerFilters.addEventListener('click', function() {
+                const layer = getSelectedLayer();
+                if (!layer) return;
+                layer.filters = { brightness: 100, contrast: 100, saturation: 100, hue: 0 };
+                brightnessSlider.value = 100;
+                contrastSlider.value = 100;
+                saturationSlider.value = 100;
+                hueSlider.value = 0;
+                brightnessVal.textContent = '100%';
+                contrastVal.textContent = '100%';
+                saturationVal.textContent = '100%';
+                hueVal.textContent = '0°';
+                renderAll();
+                updateLayerList();
+            });
+
+            colorPickToggle.addEventListener('click', function() {
+                if (colorPickMode) setMode('select');
+                else {
+                    if (eraseMode) setMode('select');
+                    setMode('color');
+                }
+            });
+
+            eraseModeToggle.addEventListener('click', function() {
+                if (eraseMode) setMode('select');
+                else {
+                    if (colorPickMode) setMode('select');
+                    setMode('erase');
+                }
+            });
+
+            brushSizeSlider.addEventListener('input', function() {
+                brushSize = parseInt(this.value);
+                brushSizeVal.textContent = brushSize;
+                if (eraseMode) {
+                    overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                }
+            });
+
+            clearErasure.addEventListener('click', function() {
+                const layer = getSelectedLayer();
+                if (!layer) return;
+                const lctx = layer.canvas.getContext('2d');
+                lctx.clearRect(0, 0, layer.canvas.width, layer.canvas.height);
+                lctx.drawImage(layer.image, 0, 0);
+                renderAll();
+                updateLayerList();
             });
 
             // ========== 导出按钮 ==========
@@ -1679,7 +1386,7 @@
             updateLayerList();
             updateControls();
 
-            console.log('🖼️ 多图层编辑器 (导出已修复: 精确计算有像素区域并集)');
+            console.log('🖼️ 多图层编辑器 (图层顺序修复 + 手机触摸适配)');
         })();
     </script>
 
