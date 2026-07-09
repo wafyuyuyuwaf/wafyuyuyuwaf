@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>图片上下边缘渐变遮罩生成器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 24px 16px 40px;
+        }
+
+        .app {
+            max-width: 1100px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.07);
+            padding: 28px 32px 34px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a2e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        h1 small {
+            font-size: 14px;
+            font-weight: 400;
+            color: #6b7280;
+            margin-left: 4px;
+        }
+
+        .sub {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 24px;
+            padding-left: 14px;
+            border-left: 3px solid #d0d7e6;
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 14px 24px;
+            background: #f8fafc;
+            padding: 14px 20px;
+            border-radius: 18px;
+            margin-bottom: 24px;
+            border: 1px solid #e9edf4;
+        }
+
+        .upload-btn-wrap {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .upload-btn-wrap input[type="file"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .upload-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #1a1a2e;
+            color: #fff;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 9px 22px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .upload-btn:hover {
+            background: #2d2d4a;
+        }
+        .upload-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        .range-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 18px;
+        }
+        .range-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+        .range-item label {
+            color: #4b5563;
+            font-weight: 400;
+        }
+        .range-item input[type="number"] {
+            width: 64px;
+            padding: 5px 2px 5px 8px;
+            border: 1.5px solid #d1d9e6;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            background: #fff;
+            outline: none;
+            color: #1a1a2e;
+        }
+        .range-item input[type="number"]:focus {
+            border-color: #1a1a2e;
+            box-shadow: 0 0 0 3px rgba(26, 26, 46, 0.08);
+        }
+        .range-item .pct {
+            font-weight: 400;
+            color: #6b7280;
+        }
+
+        .hint {
+            font-size: 13px;
+            color: #6b7280;
+            background: #eef2f7;
+            padding: 4px 14px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .hint strong {
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        .save-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #0b8f5c;
+            color: #fff;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 9px 22px;
+            border-radius: 40px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+        .save-btn:hover {
+            background: #0a7a4e;
+        }
+        .save-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .save-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+            flex-shrink: 0;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            background: #f0f2f6;
+            border-radius: 18px;
+            overflow: hidden;
+            min-height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e4e8ef;
+            transition: background 0.2s;
+        }
+        .canvas-wrapper.drag-over {
+            background: #e8edf8;
+            border-color: #1a1a2e;
+            border-style: dashed;
+            border-width: 2px;
+        }
+
+        .canvas-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            padding: 24px;
+        }
+
+        .image-mask-wrap {
+            position: relative;
+            display: none;
+            flex-shrink: 0;
+            border-radius: 6px;
+            overflow: hidden;
+            background: transparent;
+        }
+        .image-mask-wrap img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+            user-select: none;
+            -webkit-user-drag: none;
+            border-radius: 6px;
+        }
+
+        .overlay-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            border-radius: 6px;
+            background: linear-gradient(to bottom, #EDEDED 0%, rgba(237, 237, 237, 0) 100%);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+        }
+        .overlay-bottom {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            border-radius: 6px;
+            background: linear-gradient(to bottom, rgba(247, 247, 247, 0) 0%, #F7F7F7 100%);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 50px 20px;
+            color: #9aa3b5;
+            text-align: center;
+            gap: 10px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .empty-state svg {
+            width: 52px;
+            height: 52px;
+            fill: #c8d0dd;
+            opacity: 0.6;
+        }
+        .empty-state .big {
+            font-size: 17px;
+            font-weight: 500;
+            color: #4b5563;
+        }
+        .empty-state .small {
+            font-size: 14px;
+            color: #9aa3b5;
+        }
+        .empty-state .upload-tip {
+            margin-top: 6px;
+            background: #eef2f7;
+            padding: 5px 20px;
+            border-radius: 40px;
+            font-size: 13px;
+            color: #4b5563;
+        }
+
+        .footer-info {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #8b95a9;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .footer-info .file-name {
+            font-weight: 500;
+            color: #3d4559;
+            max-width: 260px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* 新增过渡范围样式 */
+        .range-item.soft-range {
+            border-left: 2px solid #d0d7e6;
+            padding-left: 14px;
+        }
+        .range-item.soft-range input {
+            width: 56px;
+        }
+
+        @media (max-width: 820px) {
+            .app {
+                padding: 18px 14px 22px;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+                padding: 14px 16px;
+            }
+            .range-group {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .save-btn {
+                margin-left: 0;
+                justify-content: center;
+            }
+            .hint {
+                white-space: normal;
+            }
+            .upload-btn-wrap {
+                align-self: center;
+            }
+            .range-item.soft-range {
+                border-left: none;
+                padding-left: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px 8px 24px;
+            }
+            .app {
+                padding: 12px 10px 18px;
+                border-radius: 18px;
+            }
+            h1 {
+                font-size: 18px;
+            }
+            .range-item input[type="number"] {
+                width: 54px;
+                padding: 4px 2px 4px 6px;
+                font-size: 13px;
+            }
+            .canvas-container {
+                padding: 12px;
+            }
+            .controls {
+                padding: 10px 12px;
+            }
+            .range-item.soft-range input {
+                width: 48px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f0f2f6;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c8d0dd;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app">
+        <h1>
+            🎨 边缘渐变遮罩
+            <small>自定义过渡范围</small>
+        </h1>
+        <div class="sub">上传图片，调整上下渐变范围与过渡缓冲，实时预览 · 支持保存</div>
+
+        <!-- 控制栏 -->
+        <div class="controls">
+            <div class="upload-btn-wrap">
+                <button class="upload-btn" id="uploadBtn" type="button">
+                    <svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                    选择图片
+                </button>
+                <input type="file" id="fileInput" accept="image/*" />
+            </div>
+
+            <div class="range-group">
+                <div class="range-item">
+                    <label>上边</label>
+                    <input type="number" id="topPct" value="18" min="0" max="100" step="0.5" />
+                    <span class="pct">%</span>
+                </div>
+                <div class="range-item">
+                    <label>下边</label>
+                    <input type="number" id="bottomPct" value="82" min="0" max="100" step="0.5" />
+                    <span class="pct">%</span>
+                </div>
+                <div class="range-item soft-range">
+                    <label>过渡</label>
+                    <input type="number" id="softPct" value="5" min="0" max="30" step="0.5" />
+                    <span class="pct">%</span>
+                </div>
+                <span class="hint">💡 建议 <strong>上边 18</strong> · <strong>下边 82</strong> · 过渡 5~15%</span>
+            </div>
+
+            <button class="save-btn" id="saveBtn" disabled type="button">
+                <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                保存图片
+            </button>
+        </div>
+
+        <!-- 图片显示区 -->
+        <div class="canvas-wrapper" id="canvasWrapper">
+            <div class="canvas-container" id="canvasContainer">
+                <div class="empty-state" id="emptyState">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h10v2H7zm0 4h6v2H7zm0-8h10v2H7z"/></svg>
+                    <div class="big">拖拽或点击上传图片</div>
+                    <div class="small">支持 JPG · PNG · WebP</div>
+                    <div class="upload-tip">点击「选择图片」或拖拽到此处</div>
+                </div>
+
+                <div class="image-mask-wrap" id="imageMaskWrap">
+                    <img id="previewImg" src="" alt="预览图片" />
+                    <div class="overlay-top" id="overlayTop"></div>
+                    <div class="overlay-bottom" id="overlayBottom"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-info">
+            <span class="file-name" id="fileName">—</span>
+            <span id="sizeInfo">—</span>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // ===== DOM 引用 =====
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const previewImg = document.getElementById('previewImg');
+            const imageMaskWrap = document.getElementById('imageMaskWrap');
+            const emptyState = document.getElementById('emptyState');
+            const overlayTop = document.getElementById('overlayTop');
+            const overlayBottom = document.getElementById('overlayBottom');
+            const topPctInput = document.getElementById('topPct');
+            const bottomPctInput = document.getElementById('bottomPct');
+            const softPctInput = document.getElementById('softPct');
+            const saveBtn = document.getElementById('saveBtn');
+            const fileNameEl = document.getElementById('fileName');
+            const sizeInfoEl = document.getElementById('sizeInfo');
+            const canvasWrapper = document.getElementById('canvasWrapper');
+            const canvasContainer = document.getElementById('canvasContainer');
+
+            // ===== 状态 =====
+            let currentFile = null;
+            let currentImageData = null;
+            let isImageLoaded = false;
+            let objectUrl = null;
+
+            // ===== 工具 =====
+            function clamp(v, min, max) { return Math.min(Math.max(v, min), max); }
+
+            function formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            }
+
+            // ===== 更新叠加层 =====
+            function updateOverlays() {
+                if (!isImageLoaded) return;
+
+                let topVal = parseFloat(topPctInput.value);
+                let bottomVal = parseFloat(bottomPctInput.value);
+                let softVal = parseFloat(softPctInput.value);
+                if (isNaN(topVal)) topVal = 18;
+                if (isNaN(bottomVal)) bottomVal = 82;
+                if (isNaN(softVal) || softVal < 0) softVal = 5;
+                topVal = clamp(topVal, 0, 100);
+                bottomVal = clamp(bottomVal, 0, 100);
+                softVal = clamp(softVal, 0, 30);
+
+                // 保证上边 < 下边
+                if (topVal >= bottomVal) {
+                    if (topVal === 0 && bottomVal === 0) { bottomVal = 100; } else if (topVal === 100 && bottomVal === 100) { topVal =
+                            0; } else {
+                        const diff = 2;
+                        topVal = Math.max(0, bottomVal - diff);
+                        if (topVal >= bottomVal) {
+                            topVal = Math.max(0, bottomVal - 5);
+                            if (topVal >= bottomVal) { topVal = 0;
+                                bottomVal = 100; }
+                        }
+                    }
+                    topPctInput.value = topVal;
+                    bottomPctInput.value = bottomVal;
+                }
+
+                // 使用用户自定义的过渡缓冲
+                const soft = softVal;
+                const topStart = Math.max(0, topVal - soft);
+                const topEnd = topVal;
+                const bottomStart = bottomVal;
+                const bottomEnd = Math.min(100, bottomVal + soft);
+
+                // 顶部叠加层
+                const topGrad =
+                    `linear-gradient(to bottom, #EDEDED 0%, #EDEDED ${topStart}%, rgba(237,237,237,0) ${topEnd}%, rgba(237,237,237,0) 100%)`;
+                overlayTop.style.background = topGrad;
+
+                // 底部叠加层
+                const bottomGrad =
+                    `linear-gradient(to bottom, rgba(247,247,247,0) 0%, rgba(247,247,247,0) ${bottomStart}%, #F7F7F7 ${bottomEnd}%, #F7F7F7 100%)`;
+                overlayBottom.style.background = bottomGrad;
+            }
+
+            // ===== 调整图片容器尺寸 =====
+            function adjustWrapSize() {
+                if (!currentImageData) return;
+                const wrap = imageMaskWrap;
+                const container = canvasContainer;
+
+                const pad = 48;
+                let availW = container.clientWidth - pad;
+                let availH = container.clientHeight - pad;
+
+                if (availW < 20 || isNaN(availW)) {
+                    availW = Math.min(window.innerWidth * 0.85, 900) - pad;
+                }
+                if (availH < 20 || isNaN(availH)) {
+                    availH = Math.min(window.innerHeight * 0.65, 650) - pad;
+                }
+                availW = Math.max(availW, 120);
+                availH = Math.max(availH, 120);
+
+                const imgW = currentImageData.naturalWidth;
+                const imgH = currentImageData.naturalHeight;
+                const ratio = imgW / imgH;
+
+                let displayW, displayH;
+                if (availW / availH > ratio) {
+                    displayH = Math.min(availH, imgH);
+                    displayW = displayH * ratio;
+                } else {
+                    displayW = Math.min(availW, imgW);
+                    displayH = displayW / ratio;
+                }
+
+                displayW = Math.max(displayW, 80);
+                displayH = Math.max(displayH, 80);
+
+                wrap.style.width = displayW + 'px';
+                wrap.style.height = displayH + 'px';
+                previewImg.style.width = '100%';
+                previewImg.style.height = '100%';
+                previewImg.style.objectFit = 'fill';
+            }
+
+            // ===== 加载图片 =====
+            function loadImage(file) {
+                if (!file || !file.type.startsWith('image/')) {
+                    alert('请选择有效的图片文件。');
+                    return;
+                }
+
+                if (objectUrl) {
+                    URL.revokeObjectURL(objectUrl);
+                    objectUrl = null;
+                }
+
+                const url = URL.createObjectURL(file);
+                objectUrl = url;
+
+                const img = new Image();
+                img.onload = function() {
+                    currentImageData = {
+                        img: img,
+                        naturalWidth: img.naturalWidth,
+                        naturalHeight: img.naturalHeight,
+                        url: url
+                    };
+                    currentFile = file;
+
+                    previewImg.src = url;
+                    imageMaskWrap.style.display = 'block';
+                    emptyState.style.display = 'none';
+
+                    fileNameEl.textContent = file.name || '未命名';
+                    sizeInfoEl.textContent = formatFileSize(file.size);
+                    saveBtn.disabled = false;
+                    isImageLoaded = true;
+
+                    adjustWrapSize();
+                    requestAnimationFrame(() => {
+                        adjustWrapSize();
+                        updateOverlays();
+                    });
+                    setTimeout(() => {
+                        adjustWrapSize();
+                        updateOverlays();
+                    }, 80);
+
+                    console.log('✅ 图片加载成功:', file.name, `${img.naturalWidth}x${img.naturalHeight}`);
+                };
+
+                img.onerror = function() {
+                    alert('图片加载失败，请尝试其他文件。');
+                    if (objectUrl) {
+                        URL.revokeObjectURL(objectUrl);
+                        objectUrl = null;
+                    }
+                };
+
+                img.src = url;
+            }
+
+            // ===== 保存图片 =====
+            function saveImage() {
+                if (!isImageLoaded || !currentImageData) {
+                    alert('请先上传图片。');
+                    return;
+                }
+
+                const img = currentImageData.img;
+                const w = img.naturalWidth;
+                const h = img.naturalHeight;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+
+                ctx.drawImage(img, 0, 0, w, h);
+
+                let topVal = parseFloat(topPctInput.value);
+                let bottomVal = parseFloat(bottomPctInput.value);
+                let softVal = parseFloat(softPctInput.value);
+                if (isNaN(topVal)) topVal = 18;
+                if (isNaN(bottomVal)) bottomVal = 82;
+                if (isNaN(softVal) || softVal < 0) softVal = 5;
+                topVal = clamp(topVal, 0, 100);
+                bottomVal = clamp(bottomVal, 0, 100);
+                softVal = clamp(softVal, 0, 30);
+                if (topVal >= bottomVal) {
+                    const diff = 2;
+                    topVal = Math.max(0, bottomVal - diff);
+                    if (topVal >= bottomVal) { topVal = 0;
+                        bottomVal = 100; }
+                }
+
+                const soft = softVal;
+                const topStart = Math.max(0, topVal - soft);
+                const topEnd = topVal;
+                const bottomStart = bottomVal;
+                const bottomEnd = Math.min(100, bottomVal + soft);
+
+                const gradTop = ctx.createLinearGradient(0, 0, 0, h);
+                const topColor = '#EDEDED';
+                gradTop.addColorStop(0, topColor);
+                gradTop.addColorStop(topStart / 100, topColor);
+                gradTop.addColorStop(topEnd / 100, 'rgba(237,237,237,0)');
+                gradTop.addColorStop(1, 'rgba(237,237,237,0)');
+                ctx.fillStyle = gradTop;
+                ctx.fillRect(0, 0, w, h);
+
+                const gradBottom = ctx.createLinearGradient(0, 0, 0, h);
+                const bottomColor = '#F7F7F7';
+                gradBottom.addColorStop(0, 'rgba(247,247,247,0)');
+                gradBottom.addColorStop(bottomStart / 100, 'rgba(247,247,247,0)');
+                gradBottom.addColorStop(bottomEnd / 100, bottomColor);
+                gradBottom.addColorStop(1, bottomColor);
+                ctx.fillStyle = gradBottom;
+                ctx.fillRect(0, 0, w, h);
+
+                const link = document.createElement('a');
+                const ext = currentFile ? (currentFile.name.split('.').pop() || 'png') : 'png';
+                const name = currentFile ? currentFile.name.replace(/\.[^.]+$/, '') : 'image';
+                link.download = name + '_gradient.' + ext;
+                link.href = canvas.toDataURL('image/png');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+
+            // ===== 响应式调整 =====
+            let resizeTimer;
+
+            function onResize() {
+                if (isImageLoaded) adjustWrapSize();
+            }
+
+            // ===== 事件绑定 =====
+            uploadBtn.addEventListener('click', function() { fileInput.click(); });
+            fileInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    loadImage(this.files[0]);
+                }
+                this.value = '';
+            });
+
+            canvasWrapper.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.classList.add('drag-over');
+            });
+            canvasWrapper.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+            });
+            canvasWrapper.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files && files.length > 0) {
+                    const file = files[0];
+                    if (file.type.startsWith('image/')) {
+                        loadImage(file);
+                    } else {
+                        alert('请拖拽图片文件。');
+                    }
+                }
+            });
+
+            emptyState.addEventListener('click', function() { fileInput.click(); });
+
+            // 所有参数输入触发更新
+            [topPctInput, bottomPctInput, softPctInput].forEach(input => {
+                input.addEventListener('input', function() {
+                    // 对上下边做互锁
+                    if (this === topPctInput || this === bottomPctInput) {
+                        let topVal = parseFloat(topPctInput.value);
+                        let bottomVal = parseFloat(bottomPctInput.value);
+                        if (isNaN(topVal)) topVal = 18;
+                        if (isNaN(bottomVal)) bottomVal = 82;
+                        topVal = clamp(topVal, 0, 100);
+                        bottomVal = clamp(bottomVal, 0, 100);
+                        if (topVal >= bottomVal) {
+                            if (this === topPctInput) {
+                                // 调整下边
+                                bottomVal = Math.min(100, topVal + 2);
+                                if (bottomVal >= 100) { bottomVal = 100;
+                                    topVal = Math.max(0, bottomVal - 2); }
+                            } else {
+                                topVal = Math.max(0, bottomVal - 2);
+                                if (topVal <= 0) { topVal = 0;
+                                    bottomVal = Math.min(100, topVal + 2); }
+                            }
+                            topPctInput.value = topVal;
+                            bottomPctInput.value = bottomVal;
+                        }
+                    }
+                    if (isImageLoaded) updateOverlays();
+                });
+            });
+
+            saveBtn.addEventListener('click', saveImage);
+
+            document.addEventListener('keydown', function(e) {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    if (!saveBtn.disabled) saveImage();
+                }
+            });
+
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(onResize, 100);
+            });
+
+            if (window.ResizeObserver) {
+                const ro = new ResizeObserver(function() {
+                    if (isImageLoaded) adjustWrapSize();
+                });
+                ro.observe(canvasContainer);
+                ro.observe(canvasWrapper);
+            }
+
+            // ===== 初始状态 =====
+            imageMaskWrap.style.display = 'none';
+            emptyState.style.display = 'flex';
+            saveBtn.disabled = true;
+
+            console.log('🖼️ 图片上下边缘渐变遮罩生成器已启动');
+            console.log('💡 支持自定义过渡范围 (0~30%)');
+            console.log('💡 快捷键: Ctrl+S / Cmd+S 保存');
+
+            window.addEventListener('load', function() {
+                if (isImageLoaded) {
+                    setTimeout(adjustWrapSize, 50);
+                }
+            });
+
+        })();
+    </script>
+
+</body>
+</html>
