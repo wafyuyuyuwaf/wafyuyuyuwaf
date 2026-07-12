@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>二维码生成器 · 颜色折叠</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js">
-    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码 · 中文直显（GBK硬编码）</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -22,7 +21,7 @@
             min-height: 100vh;
         }
         .container {
-            max-width: 750px;
+            max-width: 780px;
             width: 100%;
             background: #313244;
             padding: 30px;
@@ -52,7 +51,8 @@
             margin-bottom: 4px;
         }
         input[type="text"],
-        input[type="number"] {
+        input[type="number"],
+        select {
             width: 100%;
             padding: 10px 14px;
             background: #1e1e2e;
@@ -62,8 +62,8 @@
             font-size: 14px;
             outline: none;
         }
-        input[type="text"]:focus,
-        input[type="number"]:focus {
+        input:focus,
+        select:focus {
             border-color: #89b4fa;
         }
         input[type="color"] {
@@ -244,11 +244,11 @@
             border-radius: 10px;
             margin-bottom: 16px;
             font-size: 14px;
-            border-left: 4px solid #f9e2af;
+            border-left: 4px solid #a6e3a1;
             color: #cdd6f4;
         }
         .tip-box strong {
-            color: #f9e2af;
+            color: #a6e3a1;
         }
         .error-msg {
             color: #f38ba8;
@@ -256,490 +256,590 @@
             text-align: center;
             padding: 20px;
         }
+        select option {
+            background: #313244;
+            color: #cdd6f4;
+        }
+        .debug-area {
+            background: #1e1e2e;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #a6adc8;
+            word-break: break-all;
+            border: 1px solid #45475a;
+            display: none;
+        }
+        .debug-area.show {
+            display: block;
+        }
+        .debug-area .label {
+            font-weight: 600;
+            color: #89b4fa;
+        }
+        .debug-area .hex {
+            font-family: 'Courier New', monospace;
+            color: #f9e2af;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>🎨 智能二维码生成器</h2>
-        <div class="sub">图片裁剪不变形 · 一键换色 · 防冲突</div>
+<div class="container">
+    <h2>✅ 二维码生成器 · 中文直显（GBK硬编码）</h2>
+    <div class="sub">针对微信/支付宝优化 · 三种编码模式 · 实时十六进制预览</div>
 
-        <!-- 配色提示 -->
-        <div class="tip-box">
-            💡 <strong>配色建议：</strong> 前景（深色模块）尽量用 <strong>深色</strong>，背景用 <strong>浅色</strong>，两者色彩跨度不宜过大，保证扫码识别率。
-        </div>
+    <div class="tip-box">
+        💡 <strong>推荐：</strong>默认使用 <strong>“🇨🇳 微信/支付宝直显中文 (GBK编码)”</strong>，若扫码仍乱码，请切换到 <strong>“🔒 百分号安全编码”</strong>（显示 %E4... 但绝对不乱码）。
+    </div>
 
-        <!-- 内容 -->
-        <div class="form-group">
-            <label>📝 内容 / 链接</label>
-            <input type="text" id="textInput" value="https://xn--6qqr6phgl90m.top/" />
-        </div>
+    <!-- 内容 -->
+    <div class="form-group">
+        <label>📝 内容 / 链接</label>
+        <input type="text" id="textInput" value="你好世界" />
+    </div>
 
-        <!-- 尺寸 -->
-        <div class="form-group">
-            <label>📐 尺寸 (像素)</label>
-            <input type="number" id="sizeInput" value="300" min="150" max="800" step="10" />
-        </div>
+    <!-- 编码模式 -->
+    <div class="form-group">
+        <label>🧩 扫码编码模式</label>
+        <select id="encodeMode">
+            <option value="gbk" selected>🇨🇳 微信/支付宝直显中文 (GBK编码) ⭐推荐</option>
+            <option value="bom">🔮 BOM 偏方（部分新版可识别）</option>
+            <option value="safe">🔒 百分号安全编码（显示 %E4... 纯英文）</option>
+            <option value="raw">📄 原始 UTF-8（大概率乱码）</option>
+        </select>
+        <div class="hint">GBK模式让微信/支付宝直接用国标码解码，完美显示中文</div>
+    </div>
 
-        <!-- 背景设置 -->
-        <div class="form-group">
-            <label>⬜ 背景填充</label>
-            <div class="row">
-                <div class="form-group" style="flex:1;">
-                    <label style="font-weight:400;">背景色</label>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="color" id="bgColor" value="#ffffff" style="flex:1; min-width:60px;" />
-                        <button class="reset-btn" id="resetBgBtn">↺ 重置</button>
-                    </div>
-                    <div class="palette-header">
-                        <span style="font-size:13px; color:#a6adc8;">预设颜色</span>
-                        <button class="toggle-palette-btn" data-target="bgPalette">﹀ 展开</button>
-                    </div>
-                    <div class="color-palette" id="bgPalette" style="display:none;">
-                        <!-- JS 动态生成色块 -->
-                    </div>
-                </div>
-                <div class="form-group" style="flex:1;">
-                    <label style="font-weight:400;">或上传背景图片</label>
-                    <div class="file-group">
-                        <label class="file-label" for="bgFileInput">📁 选择图片</label>
-                        <input type="file" id="bgFileInput" accept="image/*" />
-                        <span class="file-name" id="bgFileName">未选择</span>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <!-- 尺寸 -->
+    <div class="form-group">
+        <label>📐 尺寸 (像素)</label>
+        <input type="number" id="sizeInput" value="300" min="150" max="800" step="10" />
+    </div>
 
-        <!-- 前景设置 -->
-        <div class="form-group">
-            <label>🎨 前景填充（二维码深色模块）</label>
-            <div class="row">
-                <div class="form-group" style="flex:1;">
-                    <label style="font-weight:400;">前景色</label>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="color" id="fgColor" value="#000000" style="flex:1; min-width:60px;" />
-                        <button class="reset-btn" id="resetFgBtn">↺ 重置</button>
-                    </div>
-                    <div class="palette-header">
-                        <span style="font-size:13px; color:#a6adc8;">预设颜色</span>
-                        <button class="toggle-palette-btn" data-target="fgPalette">﹀ 展开</button>
-                    </div>
-                    <div class="color-palette" id="fgPalette" style="display:none;">
-                        <!-- JS 动态生成色块 -->
-                    </div>
-                </div>
-                <div class="form-group" style="flex:1;">
-                    <label style="font-weight:400;">或上传前景图片（纹理）</label>
-                    <div class="file-group">
-                        <label class="file-label" for="fgFileInput">📁 选择图片</label>
-                        <input type="file" id="fgFileInput" accept="image/*" />
-                        <span class="file-name" id="fgFileName">未选择</span>
-                    </div>
-                    <div class="hint">图片将居中裁剪填充每个深色模块</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 额外选项 -->
+    <!-- 背景 -->
+    <div class="form-group">
+        <label>⬜ 背景填充</label>
         <div class="row">
-            <div class="form-group">
-                <label>🔆 背景图片透明度</label>
-                <input type="number" id="bgOpacity" value="1.0" min="0.1" max="1.0" step="0.05" />
-                <div class="hint">1 = 完全不透明（原图）</div>
+            <div class="form-group" style="flex:1;">
+                <label style="font-weight:400;">背景色</label>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="color" id="bgColor" value="#ffffff" style="flex:1; min-width:60px;" />
+                    <button class="reset-btn" id="resetBgBtn">↺ 重置</button>
+                </div>
+                <div class="palette-header">
+                    <span style="font-size:13px; color:#a6adc8;">预设颜色</span>
+                    <button class="toggle-palette-btn" data-target="bgPalette">﹀ 展开</button>
+                </div>
+                <div class="color-palette" id="bgPalette" style="display:none;"></div>
             </div>
-            <div class="form-group">
-                <label>🔲 模块圆角 (px)</label>
-                <input type="number" id="cornerRadius" value="0" min="0" max="10" step="1" />
-            </div>
-        </div>
-
-        <!-- 警告 -->
-        <div id="warningBox" class="warning"></div>
-
-        <!-- 预览 -->
-        <div class="preview-box">
-            <canvas id="qrCanvas"></canvas>
-            <div class="action-bar">
-                <button class="success" onclick="downloadImage()">⬇️ 下载 PNG</button>
-                <button class="primary" onclick="generate()">🔄 刷新</button>
+            <div class="form-group" style="flex:1;">
+                <label style="font-weight:400;">或上传背景图片</label>
+                <div class="file-group">
+                    <label class="file-label" for="bgFileInput">📁 选择图片</label>
+                    <input type="file" id="bgFileInput" accept="image/*" />
+                    <span class="file-name" id="bgFileName">未选择</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // ============================================================
-        // 1. 检测库
-        // ============================================================
-        if (typeof qrcode === 'undefined') {
-            document.getElementById('qrCanvas').parentNode.innerHTML =
-                '<div class="error-msg">❌ 二维码库加载失败，请刷新页面或检查网络。</div>';
-            throw new Error('QRCode library not loaded');
-        }
+    <!-- 前景 -->
+    <div class="form-group">
+        <label>🎨 前景填充（二维码深色模块）</label>
+        <div class="row">
+            <div class="form-group" style="flex:1;">
+                <label style="font-weight:400;">前景色</label>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <input type="color" id="fgColor" value="#000000" style="flex:1; min-width:60px;" />
+                    <button class="reset-btn" id="resetFgBtn">↺ 重置</button>
+                </div>
+                <div class="palette-header">
+                    <span style="font-size:13px; color:#a6adc8;">预设颜色</span>
+                    <button class="toggle-palette-btn" data-target="fgPalette">﹀ 展开</button>
+                </div>
+                <div class="color-palette" id="fgPalette" style="display:none;"></div>
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label style="font-weight:400;">或上传前景图片（纹理）</label>
+                <div class="file-group">
+                    <label class="file-label" for="fgFileInput">📁 选择图片</label>
+                    <input type="file" id="fgFileInput" accept="image/*" />
+                    <span class="file-name" id="fgFileName">未选择</span>
+                </div>
+                <div class="hint">图片将居中裁剪填充每个深色模块</div>
+            </div>
+        </div>
+    </div>
 
-        // ============================================================
-        // 2. DOM 引用 & 状态
-        // ============================================================
-        const textInput = document.getElementById('textInput');
-        const sizeInput = document.getElementById('sizeInput');
-        const bgColor = document.getElementById('bgColor');
-        const bgFileInput = document.getElementById('bgFileInput');
-        const bgFileName = document.getElementById('bgFileName');
-        const fgColor = document.getElementById('fgColor');
-        const fgFileInput = document.getElementById('fgFileInput');
-        const fgFileName = document.getElementById('fgFileName');
-        const bgOpacity = document.getElementById('bgOpacity');
-        const cornerRadius = document.getElementById('cornerRadius');
-        const warningBox = document.getElementById('warningBox');
-        const canvas = document.getElementById('qrCanvas');
-        const ctx = canvas.getContext('2d');
+    <!-- 额外选项 -->
+    <div class="row">
+        <div class="form-group">
+            <label>🔆 背景图片透明度</label>
+            <input type="number" id="bgOpacity" value="1.0" min="0.1" max="1.0" step="0.05" />
+        </div>
+        <div class="form-group">
+            <label>🔲 模块圆角 (px)</label>
+            <input type="number" id="cornerRadius" value="0" min="0" max="10" step="1" />
+        </div>
+    </div>
 
-        const bgImage = { img: null, name: '', size: 0 };
-        const fgImage = { img: null, name: '', size: 0 };
+    <div id="warningBox" class="warning"></div>
 
-        // ============================================================
-        // 3. 预设颜色 (保留原有丰富颜色)
-        // ============================================================
-        const presetColors = [
-            '#000000', '#333333', '#555555', '#888888',
-            '#ff0000', '#cc0000', '#990000',
-            '#0044cc', '#002288',
-            '#009900', '#006600',
-            '#cc8800', '#aa6600',
-            '#ffffff', '#f0f0f0', '#e0e0e0', '#cccccc',
-            '#ffdddd', '#ddddff', '#ddffdd', '#ffffdd'
-        ];
+    <!-- 调试区 -->
+    <div id="debugArea" class="debug-area">
+        <div><span class="label">📦 编码字节 (Hex) :</span> <span id="hexDump" class="hex"></span></div>
+        <div><span class="label">🔢 字节长度 :</span> <span id="byteLength"></span></div>
+    </div>
 
-        // 生成色块
-        function buildPalette(containerId, colorInputId) {
-            const container = document.getElementById(containerId);
-            const input = document.getElementById(colorInputId);
-            container.innerHTML = '';
-            presetColors.forEach(hex => {
-                const swatch = document.createElement('span');
-                swatch.className = 'color-swatch';
-                swatch.style.backgroundColor = hex;
-                swatch.dataset.color = hex;
-                swatch.addEventListener('click', function() {
-                    input.value = hex;
-                    container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-                    swatch.classList.add('active');
-                    scheduleGenerate();
-                });
-                container.appendChild(swatch);
-            });
-            // 监听自定义颜色变化，同步高亮
-            input.addEventListener('input', function() {
+    <div class="preview-box">
+        <canvas id="qrCanvas"></canvas>
+        <div class="action-bar">
+            <button class="success" onclick="downloadImage()">⬇️ 下载 PNG</button>
+            <button class="primary" onclick="generate()">🔄 刷新</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (typeof qrcode === 'undefined') {
+        document.querySelector('.preview-box').innerHTML = '<div class="error-msg">❌ 二维码库加载失败，请刷新页面或检查网络。</div>';
+        throw new Error('QRCode library not loaded');
+    }
+
+    // ----- DOM 引用 -----
+    const textInput = document.getElementById('textInput');
+    const sizeInput = document.getElementById('sizeInput');
+    const bgColor = document.getElementById('bgColor');
+    const bgFileInput = document.getElementById('bgFileInput');
+    const bgFileName = document.getElementById('bgFileName');
+    const fgColor = document.getElementById('fgColor');
+    const fgFileInput = document.getElementById('fgFileInput');
+    const fgFileName = document.getElementById('fgFileName');
+    const bgOpacity = document.getElementById('bgOpacity');
+    const cornerRadius = document.getElementById('cornerRadius');
+    const encodeMode = document.getElementById('encodeMode');
+    const warningBox = document.getElementById('warningBox');
+    const canvas = document.getElementById('qrCanvas');
+    const ctx = canvas.getContext('2d');
+    const debugArea = document.getElementById('debugArea');
+    const hexDump = document.getElementById('hexDump');
+    const byteLength = document.getElementById('byteLength');
+
+    const bgImage = { img: null, name: '', size: 0 };
+    const fgImage = { img: null, name: '', size: 0 };
+    let generationId = 0;
+
+    // ----- 预设颜色 -----
+    const presetColors = [
+        '#000000', '#333333', '#555555', '#888888',
+        '#ff0000', '#cc0000', '#990000',
+        '#0044cc', '#002288',
+        '#009900', '#006600',
+        '#cc8800', '#aa6600',
+        '#ffffff', '#f0f0f0', '#e0e0e0', '#cccccc',
+        '#ffdddd', '#ddddff', '#ddffdd', '#ffffdd'
+    ];
+
+    function buildPalette(containerId, colorInputId) {
+        const container = document.getElementById(containerId);
+        const input = document.getElementById(colorInputId);
+        container.innerHTML = '';
+        presetColors.forEach(hex => {
+            const swatch = document.createElement('span');
+            swatch.className = 'color-swatch';
+            swatch.style.backgroundColor = hex;
+            swatch.dataset.color = hex;
+            swatch.addEventListener('click', function() {
+                input.value = hex;
                 container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-                const val = input.value.toLowerCase();
-                container.querySelectorAll('.color-swatch').forEach(s => {
-                    if (s.dataset.color.toLowerCase() === val) {
-                        s.classList.add('active');
-                    }
-                });
+                swatch.classList.add('active');
                 scheduleGenerate();
             });
-        }
-
-        buildPalette('bgPalette', 'bgColor');
-        buildPalette('fgPalette', 'fgColor');
-
-        // ============================================================
-        // 4. 折叠按钮控制
-        // ============================================================
-        document.querySelectorAll('.toggle-palette-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const targetId = this.dataset.target;
-                const palette = document.getElementById(targetId);
-                if (palette.style.display === 'none') {
-                    palette.style.display = 'flex';
-                    this.textContent = '﹀ 收起';
-                } else {
-                    palette.style.display = 'none';
-                    this.textContent = '﹀ 展开';
-                }
-            });
+            container.appendChild(swatch);
         });
-
-        // ============================================================
-        // 5. 文件上传 + 冲突检测
-        // ============================================================
-        function setupFileInput(input, storage, nameDisplay, otherStorage) {
-            input.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) {
-                    storage.img = null;
-                    storage.name = '';
-                    storage.size = 0;
-                    nameDisplay.textContent = '未选择';
-                    generate();
-                    return;
+        input.addEventListener('input', function() {
+            container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            const val = input.value.toLowerCase();
+            container.querySelectorAll('.color-swatch').forEach(s => {
+                if (s.dataset.color.toLowerCase() === val) {
+                    s.classList.add('active');
                 }
-                if (otherStorage && otherStorage.name === file.name && otherStorage.size === file.size) {
-                    warningBox.textContent = '⚠️ 前景和背景图片相同，请换一张不同的图片！';
-                    warningBox.className = 'warning show';
-                    input.value = '';
-                    storage.img = null;
-                    storage.name = '';
-                    storage.size = 0;
-                    nameDisplay.textContent = '未选择';
-                    generate();
-                    return;
-                }
-                warningBox.className = 'warning';
-
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    const img = new Image();
-                    img.onload = function() {
-                        storage.img = img;
-                        storage.name = file.name;
-                        storage.size = file.size;
-                        nameDisplay.textContent = file.name;
-                        if (otherStorage && otherStorage.name === file.name && otherStorage.size === file.size) {
-                            warningBox.textContent = '⚠️ 前景和背景图片相同，请换一张不同的图片！';
-                            warningBox.className = 'warning show';
-                            storage.img = null;
-                            storage.name = '';
-                            storage.size = 0;
-                            nameDisplay.textContent = '未选择';
-                            input.value = '';
-                            generate();
-                            return;
-                        }
-                        generate();
-                    };
-                    img.src = ev.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        setupFileInput(bgFileInput, bgImage, bgFileName, fgImage);
-        setupFileInput(fgFileInput, fgImage, fgFileName, bgImage);
-
-        // ============================================================
-        // 6. 重置功能
-        // ============================================================
-        document.getElementById('resetBgBtn').addEventListener('click', function() {
-            bgColor.value = '#ffffff';
-            bgFileInput.value = '';
-            bgImage.img = null;
-            bgImage.name = '';
-            bgImage.size = 0;
-            bgFileName.textContent = '未选择';
-            document.querySelectorAll('#bgPalette .color-swatch').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('#bgPalette .color-swatch').forEach(s => {
-                if (s.dataset.color.toLowerCase() === '#ffffff') s.classList.add('active');
             });
             scheduleGenerate();
         });
+    }
 
-        document.getElementById('resetFgBtn').addEventListener('click', function() {
-            fgColor.value = '#000000';
-            fgFileInput.value = '';
-            fgImage.img = null;
-            fgImage.name = '';
-            fgImage.size = 0;
-            fgFileName.textContent = '未选择';
-            document.querySelectorAll('#fgPalette .color-swatch').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('#fgPalette .color-swatch').forEach(s => {
-                if (s.dataset.color.toLowerCase() === '#000000') s.classList.add('active');
-            });
-            scheduleGenerate();
-        });
+    buildPalette('bgPalette', 'bgColor');
+    buildPalette('fgPalette', 'fgColor');
 
-        // ============================================================
-        // 7. 防抖调度
-        // ============================================================
-        let timer = null;
-
-        function scheduleGenerate() {
-            clearTimeout(timer);
-            timer = setTimeout(generate, 150);
-        }
-        [textInput, sizeInput, bgColor, fgColor, bgOpacity, cornerRadius].forEach(el => {
-            el.addEventListener('input', scheduleGenerate);
-        });
-
-        // ============================================================
-        // 8. 辅助：绘制图片居中裁剪 (cover)
-        // ============================================================
-        function drawImageCover(ctx, img, targetWidth, targetHeight) {
-            const imgRatio = img.width / img.height;
-            const targetRatio = targetWidth / targetHeight;
-            let sx, sy, sw, sh;
-            if (imgRatio > targetRatio) {
-                sw = img.height * targetRatio;
-                sh = img.height;
-                sx = (img.width - sw) / 2;
-                sy = 0;
+    // 折叠面板
+    document.querySelectorAll('.toggle-palette-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const palette = document.getElementById(targetId);
+            if (palette.style.display === 'none') {
+                palette.style.display = 'flex';
+                this.textContent = '﹀ 收起';
             } else {
-                sw = img.width;
-                sh = img.width / targetRatio;
-                sx = 0;
-                sy = (img.height - sh) / 2;
+                palette.style.display = 'none';
+                this.textContent = '﹀ 展开';
             }
-            ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
-        }
+        });
+    });
 
-        // ============================================================
-        // 9. 核心生成函数
-        // ============================================================
-        function generate() {
-            try {
-                const text = textInput.value.trim() || 'Hello';
-                const size = parseInt(sizeInput.value) || 300;
-                const bgColorVal = bgColor.value;
-                const fgColorVal = fgColor.value;
-                const opacity = parseFloat(bgOpacity.value) || 1.0;
-                const radius = parseInt(cornerRadius.value) || 0;
-
-                const qr = qrcode(0, 'H');
-                qr.addData(text);
-                qr.make();
-                const moduleCount = qr.getModuleCount();
-                const modules = [];
-                for (let row = 0; row < moduleCount; row++) {
-                    modules[row] = [];
-                    for (let col = 0; col < moduleCount; col++) {
-                        modules[row][col] = qr.isDark(row, col);
-                    }
-                }
-
-                const margin = 4;
-                const totalModules = moduleCount + margin * 2;
-                const cellSize = Math.floor(size / totalModules);
-                const realSize = cellSize * totalModules;
-
-                canvas.width = realSize;
-                canvas.height = realSize;
-                ctx.clearRect(0, 0, realSize, realSize);
-
-                // ----- 绘制背景 -----
-                if (bgImage.img) {
-                    ctx.globalAlpha = opacity;
-                    drawImageCover(ctx, bgImage.img, realSize, realSize);
-                    ctx.globalAlpha = 1.0;
-                } else {
-                    ctx.fillStyle = bgColorVal;
-                    ctx.fillRect(0, 0, realSize, realSize);
-                }
-
-                // ----- 绘制深色模块 -----
-                const useFgImage = (fgImage.img !== null);
-
-                if (useFgImage) {
-                    ctx.save();
-                    ctx.beginPath();
-                    for (let row = 0; row < moduleCount; row++) {
-                        for (let col = 0; col < moduleCount; col++) {
-                            if (modules[row][col]) {
-                                const x = (col + margin) * cellSize;
-                                const y = (row + margin) * cellSize;
-                                if (radius > 0) {
-                                    ctx.moveTo(x + radius, y);
-                                    ctx.arcTo(x + cellSize, y, x + cellSize, y + cellSize, radius);
-                                    ctx.arcTo(x + cellSize, y + cellSize, x, y + cellSize, radius);
-                                    ctx.arcTo(x, y + cellSize, x, y, radius);
-                                    ctx.arcTo(x, y, x + cellSize, y, radius);
-                                } else {
-                                    ctx.rect(x, y, cellSize, cellSize);
-                                }
-                            }
-                        }
-                    }
-                    ctx.closePath();
-                    ctx.clip();
-                    drawImageCover(ctx, fgImage.img, realSize, realSize);
-                    ctx.restore();
-                } else {
-                    // 纯色填充每个模块
-                    for (let row = 0; row < moduleCount; row++) {
-                        for (let col = 0; col < moduleCount; col++) {
-                            if (modules[row][col]) {
-                                const x = (col + margin) * cellSize;
-                                const y = (row + margin) * cellSize;
-                                ctx.fillStyle = fgColorVal;
-                                if (radius > 0) {
-                                    ctx.beginPath();
-                                    ctx.moveTo(x + radius, y);
-                                    ctx.arcTo(x + cellSize, y, x + cellSize, y + cellSize, radius);
-                                    ctx.arcTo(x + cellSize, y + cellSize, x, y + cellSize, radius);
-                                    ctx.arcTo(x, y + cellSize, x, y, radius);
-                                    ctx.arcTo(x, y, x + cellSize, y, radius);
-                                    ctx.closePath();
-                                    ctx.fill();
-                                } else {
-                                    ctx.fillRect(x, y, cellSize, cellSize);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 外边框装饰
-                ctx.strokeStyle = 'rgba(200,200,200,0.2)';
-                ctx.lineWidth = 1;
-                ctx.strokeRect(margin * cellSize - 1, margin * cellSize - 1,
-                    moduleCount * cellSize + 2, moduleCount * cellSize + 2);
-
-                // 对比度提醒（仅纯色，无图片）
-                if (!bgImage.img && !fgImage.img) {
-                    const hexToRgb = (hex) => {
-                        const c = hex.replace('#', '');
-                        return {
-                            r: parseInt(c.substring(0, 2), 16),
-                            g: parseInt(c.substring(2, 4), 16),
-                            b: parseInt(c.substring(4, 6), 16)
-                        };
-                    };
-                    const fgRgb = hexToRgb(fgColorVal);
-                    const bgRgb = hexToRgb(bgColorVal);
-                    const brightness = (r, g, b) => (r * 299 + g * 587 + b * 114) / 1000;
-                    const diff = Math.abs(brightness(fgRgb.r, fgRgb.g, fgRgb.b) - brightness(bgRgb.r, bgRgb.g, bgRgb.b));
-                    if (diff < 100) {
-                        warningBox.textContent = '💡 前景和背景颜色亮度差较小，建议增大对比度以保证扫码识别率。';
+    // 文件上传
+    function setupFileInput(input, storage, nameDisplay, otherStorage) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) {
+                storage.img = null;
+                storage.name = '';
+                storage.size = 0;
+                nameDisplay.textContent = '未选择';
+                generate();
+                return;
+            }
+            if (otherStorage && otherStorage.name === file.name && otherStorage.size === file.size) {
+                warningBox.textContent = '⚠️ 前景和背景图片相同，请换一张不同的图片！';
+                warningBox.className = 'warning show';
+                input.value = '';
+                storage.img = null;
+                storage.name = '';
+                storage.size = 0;
+                nameDisplay.textContent = '未选择';
+                generate();
+                return;
+            }
+            warningBox.className = 'warning';
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                const img = new Image();
+                img.onload = function() {
+                    storage.img = img;
+                    storage.name = file.name;
+                    storage.size = file.size;
+                    nameDisplay.textContent = file.name;
+                    if (otherStorage && otherStorage.name === file.name && otherStorage.size === file.size) {
+                        warningBox.textContent = '⚠️ 前景和背景图片相同，请换一张不同的图片！';
                         warningBox.className = 'warning show';
-                    } else {
-                        warningBox.className = 'warning';
+                        storage.img = null;
+                        storage.name = '';
+                        storage.size = 0;
+                        nameDisplay.textContent = '未选择';
+                        input.value = '';
+                        generate();
+                        return;
                     }
+                    generate();
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    setupFileInput(bgFileInput, bgImage, bgFileName, fgImage);
+    setupFileInput(fgFileInput, fgImage, fgFileName, bgImage);
+
+    // 重置
+    document.getElementById('resetBgBtn').addEventListener('click', function() {
+        bgColor.value = '#ffffff';
+        bgFileInput.value = '';
+        bgImage.img = null;
+        bgImage.name = '';
+        bgImage.size = 0;
+        bgFileName.textContent = '未选择';
+        document.querySelectorAll('#bgPalette .color-swatch').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('#bgPalette .color-swatch').forEach(s => {
+            if (s.dataset.color.toLowerCase() === '#ffffff') s.classList.add('active');
+        });
+        scheduleGenerate();
+    });
+
+    document.getElementById('resetFgBtn').addEventListener('click', function() {
+        fgColor.value = '#000000';
+        fgFileInput.value = '';
+        fgImage.img = null;
+        fgImage.name = '';
+        fgImage.size = 0;
+        fgFileName.textContent = '未选择';
+        document.querySelectorAll('#fgPalette .color-swatch').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('#fgPalette .color-swatch').forEach(s => {
+            if (s.dataset.color.toLowerCase() === '#000000') s.classList.add('active');
+        });
+        scheduleGenerate();
+    });
+
+    // 防抖
+    let timer = null;
+
+    function scheduleGenerate() {
+        clearTimeout(timer);
+        timer = setTimeout(generate, 150);
+    }
+    [textInput, sizeInput, bgColor, fgColor, bgOpacity, cornerRadius, encodeMode].forEach(el => {
+        el.addEventListener('input', scheduleGenerate);
+        el.addEventListener('change', scheduleGenerate);
+    });
+
+    // 绘制辅助
+    function drawImageCover(ctx, img, targetWidth, targetHeight) {
+        const imgRatio = img.width / img.height;
+        const targetRatio = targetWidth / targetHeight;
+        let sx, sy, sw, sh;
+        if (imgRatio > targetRatio) {
+            sw = img.height * targetRatio;
+            sh = img.height;
+            sx = (img.width - sw) / 2;
+            sy = 0;
+        } else {
+            sw = img.width;
+            sh = img.width / targetRatio;
+            sx = 0;
+            sy = (img.height - sh) / 2;
+        }
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetWidth, targetHeight);
+    }
+
+    // 绘制QR码（不涉及编码，只绘制模块）
+    function drawQR(qr) {
+        try {
+            const size = parseInt(sizeInput.value) || 300;
+            const bgColorVal = bgColor.value;
+            const fgColorVal = fgColor.value;
+            const opacity = parseFloat(bgOpacity.value) || 1.0;
+            const radius = parseInt(cornerRadius.value) || 0;
+
+            const moduleCount = qr.getModuleCount();
+            const modules = [];
+            for (let row = 0; row < moduleCount; row++) {
+                modules[row] = [];
+                for (let col = 0; col < moduleCount; col++) {
+                    modules[row][col] = qr.isDark(row, col);
+                }
+            }
+
+            const margin = 4;
+            const totalModules = moduleCount + margin * 2;
+            const cellSize = Math.floor(size / totalModules);
+            const realSize = cellSize * totalModules;
+
+            canvas.width = realSize;
+            canvas.height = realSize;
+            ctx.clearRect(0, 0, realSize, realSize);
+
+            // 背景
+            if (bgImage.img) {
+                ctx.globalAlpha = opacity;
+                drawImageCover(ctx, bgImage.img, realSize, realSize);
+                ctx.globalAlpha = 1.0;
+            } else {
+                ctx.fillStyle = bgColorVal;
+                ctx.fillRect(0, 0, realSize, realSize);
+            }
+
+            const useFgImage = (fgImage.img !== null);
+
+            if (useFgImage) {
+                ctx.save();
+                ctx.beginPath();
+                for (let row = 0; row < moduleCount; row++) {
+                    for (let col = 0; col < moduleCount; col++) {
+                        if (modules[row][col]) {
+                            const x = (col + margin) * cellSize;
+                            const y = (row + margin) * cellSize;
+                            if (radius > 0) {
+                                ctx.moveTo(x + radius, y);
+                                ctx.arcTo(x + cellSize, y, x + cellSize, y + cellSize, radius);
+                                ctx.arcTo(x + cellSize, y + cellSize, x, y + cellSize, radius);
+                                ctx.arcTo(x, y + cellSize, x, y, radius);
+                                ctx.arcTo(x, y, x + cellSize, y, radius);
+                            } else {
+                                ctx.rect(x, y, cellSize, cellSize);
+                            }
+                        }
+                    }
+                }
+                ctx.closePath();
+                ctx.clip();
+                drawImageCover(ctx, fgImage.img, realSize, realSize);
+                ctx.restore();
+            } else {
+                for (let row = 0; row < moduleCount; row++) {
+                    for (let col = 0; col < moduleCount; col++) {
+                        if (modules[row][col]) {
+                            const x = (col + margin) * cellSize;
+                            const y = (row + margin) * cellSize;
+                            ctx.fillStyle = fgColorVal;
+                            if (radius > 0) {
+                                ctx.beginPath();
+                                ctx.moveTo(x + radius, y);
+                                ctx.arcTo(x + cellSize, y, x + cellSize, y + cellSize, radius);
+                                ctx.arcTo(x + cellSize, y + cellSize, x, y + cellSize, radius);
+                                ctx.arcTo(x, y + cellSize, x, y, radius);
+                                ctx.arcTo(x, y, x + cellSize, y, radius);
+                                ctx.closePath();
+                                ctx.fill();
+                            } else {
+                                ctx.fillRect(x, y, cellSize, cellSize);
+                            }
+                        }
+                    }
+                }
+            }
+
+            ctx.strokeStyle = 'rgba(200,200,200,0.2)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(margin * cellSize - 1, margin * cellSize - 1,
+                moduleCount * cellSize + 2, moduleCount * cellSize + 2);
+
+            // 对比度警告
+            if (!bgImage.img && !fgImage.img) {
+                const hexToRgb = (hex) => {
+                    const c = hex.replace('#', '');
+                    return {
+                        r: parseInt(c.substring(0, 2), 16),
+                        g: parseInt(c.substring(2, 4), 16),
+                        b: parseInt(c.substring(4, 6), 16)
+                    };
+                };
+                const fgRgb = hexToRgb(fgColorVal);
+                const bgRgb = hexToRgb(bgColorVal);
+                const brightness = (r, g, b) => (r * 299 + g * 587 + b * 114) / 1000;
+                const diff = Math.abs(brightness(fgRgb.r, fgRgb.g, fgRgb.b) - brightness(bgRgb.r, bgRgb.g, bgRgb.b));
+                if (diff < 100) {
+                    warningBox.textContent = '💡 前景和背景颜色亮度差较小，建议增大对比度以保证扫码识别率。';
+                    warningBox.className = 'warning show';
                 } else {
                     warningBox.className = 'warning';
                 }
+            } else {
+                warningBox.className = 'warning';
+            }
+        } catch (err) {
+            console.error(err);
+            ctx.fillStyle = '#f38ba8';
+            ctx.font = '16px sans-serif';
+            ctx.fillText('绘制失败: ' + err.message, 20, 40);
+        }
+    }
 
-            } catch (err) {
-                console.error(err);
-                ctx.fillStyle = '#f38ba8';
-                ctx.font = '16px sans-serif';
-                ctx.fillText('生成失败: ' + err.message, 20, 40);
+    // ========== 核心生成函数 ==========
+    function generate() {
+        const rawText = textInput.value.trim() || 'Hello';
+        const mode = encodeMode.value;
+        const currentId = ++generationId;
+
+        // 用于显示调试信息
+        function showDebug(byteArray) {
+            if (!byteArray || byteArray.length === 0) {
+                debugArea.classList.remove('show');
+                return;
+            }
+            const hex = Array.from(byteArray).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+            hexDump.textContent = hex;
+            byteLength.textContent = byteArray.length;
+            debugArea.classList.add('show');
+        }
+
+        // 同步生成（用于非GBK模式）
+        function buildAndDrawSync(text, byteArrayForDebug) {
+            if (currentId !== generationId) return;
+            const qr = qrcode(0, 'H');
+            qr.addData(text);
+            qr.make();
+            drawQR(qr);
+            if (byteArrayForDebug) {
+                showDebug(byteArrayForDebug);
+            } else {
+                // 对于文本模式，尝试用UTF-8编码显示
+                const enc = new TextEncoder();
+                const bytes = enc.encode(text);
+                showDebug(bytes);
             }
         }
 
-        // ============================================================
-        // 10. 下载
-        // ============================================================
-        function downloadImage() {
-            const link = document.createElement('a');
-            link.download = `qrcode_${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+        // ---------- GBK 模式（异步） ----------
+        if (mode === 'gbk') {
+            try {
+                const blob = new Blob([rawText], { type: 'text/plain; charset=gbk' });
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (currentId !== generationId) return;
+                    const bytes = new Uint8Array(e.target.result);
+                    // 转为二进制字符串
+                    let binaryString = '';
+                    for (let i = 0; i < bytes.length; i++) {
+                        binaryString += String.fromCharCode(bytes[i]);
+                    }
+                    const qr = qrcode(0, 'H');
+                    // 关键：以 Byte 模式写入二进制字符串
+                    qr.addData(binaryString, 'Byte');
+                    qr.make();
+                    drawQR(qr);
+                    showDebug(bytes);
+                };
+                reader.onerror = function() {
+                    // 降级
+                    buildAndDrawSync(rawText);
+                };
+                reader.readAsArrayBuffer(blob);
+                return;
+            } catch (e) {
+                // 降级
+                buildAndDrawSync(rawText);
+                return;
+            }
         }
 
-        // ============================================================
-        // 11. 初始化
-        // ============================================================
-        window.addEventListener('load', function() {
-            // 默认高亮黑色和白色色块（但色块容器默认隐藏，高亮不影响）
-            document.querySelectorAll('#bgPalette .color-swatch').forEach(s => {
-                if (s.dataset.color.toLowerCase() === '#ffffff') s.classList.add('active');
-            });
-            document.querySelectorAll('#fgPalette .color-swatch').forEach(s => {
-                if (s.dataset.color.toLowerCase() === '#000000') s.classList.add('active');
-            });
-            generate();
-        });
+        // ---------- BOM 模式 ----------
+        if (mode === 'bom') {
+            const text = '\uFEFF' + rawText;
+            const enc = new TextEncoder();
+            const bytes = enc.encode(text);
+            buildAndDrawSync(text, bytes);
+            return;
+        }
 
-        window.downloadImage = downloadImage;
-        window.generate = generate;
-    </script>
+        // ---------- 安全编码（百分号） ----------
+        if (mode === 'safe') {
+            const text = encodeURIComponent(rawText);
+            const enc = new TextEncoder();
+            const bytes = enc.encode(text);
+            buildAndDrawSync(text, bytes);
+            return;
+        }
+
+        // ---------- 原始 UTF-8 ----------
+        const enc = new TextEncoder();
+        const bytes = enc.encode(rawText);
+        buildAndDrawSync(rawText, bytes);
+    }
+
+    // 下载
+    function downloadImage() {
+        const link = document.createElement('a');
+        link.download = `qrcode_${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
+    // 初始化
+    window.addEventListener('load', function() {
+        // 高亮默认颜色
+        document.querySelectorAll('#bgPalette .color-swatch').forEach(s => {
+            if (s.dataset.color.toLowerCase() === '#ffffff') s.classList.add('active');
+        });
+        document.querySelectorAll('#fgPalette .color-swatch').forEach(s => {
+            if (s.dataset.color.toLowerCase() === '#000000') s.classList.add('active');
+        });
+        generate();
+    });
+
+    window.downloadImage = downloadImage;
+    window.generate = generate;
+</script>
 </body>
 </html>
