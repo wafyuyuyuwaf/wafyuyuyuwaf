@@ -1202,7 +1202,7 @@
             let isLocked = false;
             let imageAspectRatio = 1;
 
-            // ---------- 渲染函数（与之前相同） ----------
+            // ---------- 渲染函数（完全使用 Canvas） ----------
             function renderGrid(gridData, zoomPercent) {
                 const { hexColors, mardColors, isTransparentArr, rows, cols, colorMap, transparentCount, totalBeads } = gridData;
                 beadCountSpan.textContent = totalBeads;
@@ -1214,168 +1214,80 @@
                     zoomWarning.classList.remove('show');
                 }
 
-                const useCanvas = totalCells > 5000;
-
+                // 清空容器，使用纯 Canvas
                 gridContainer.innerHTML = '';
+                gridContainer.style.display = 'flex';
+                gridContainer.style.borderLeft = '6px solid #8b5cf6';
+                gridContainer.style.borderRight = '6px solid #8b5cf6';
+                gridPlaceholder.style.display = 'none';
 
-                if (useCanvas) {
-                    const canvas = document.createElement('canvas');
-                    canvas.className = 'canvas-grid';
-                    gridContainer.appendChild(canvas);
-                    gridContainer.style.display = 'flex';
-                    gridContainer.style.borderLeft = '6px solid #8b5cf6';
-                    gridContainer.style.borderRight = '6px solid #8b5cf6';
-                    const ctx = canvas.getContext('2d');
+                const canvas = document.createElement('canvas');
+                canvas.className = 'canvas-grid';
+                gridContainer.appendChild(canvas);
+                const ctx = canvas.getContext('2d');
 
-                    const BASE_CELL = 20,
-                        BASE_GAP = 1,
-                        BASE_AXIS = 30,
-                        BASE_BORDER = 6;
-                    const scale = zoomPercent / 100;
-                    const cellSize = Math.max(2, BASE_CELL * scale);
-                    const gap = Math.max(0.5, BASE_GAP * scale);
-                    const axisSize = Math.max(14, BASE_AXIS * scale);
-                    const borderWidth = Math.max(2, BASE_BORDER * scale);
+                const BASE_CELL = 20,
+                    BASE_GAP = 1,
+                    BASE_AXIS = 30,
+                    BASE_BORDER = 6;
+                const scale = zoomPercent / 100;
+                const cellSize = Math.max(2, BASE_CELL * scale);
+                const gap = Math.max(0.5, BASE_GAP * scale);
+                const axisSize = Math.max(14, BASE_AXIS * scale);
+                const borderWidth = Math.max(2, BASE_BORDER * scale);
 
-                    const gridW = cols * cellSize + (cols - 1) * gap;
-                    const gridH = rows * cellSize + (rows - 1) * gap;
-                    const totalW = axisSize + gridW + borderWidth * 2;
-                    const totalH = gridH + axisSize;
+                const gridW = cols * cellSize + (cols - 1) * gap;
+                const gridH = rows * cellSize + (rows - 1) * gap;
+                const totalW = axisSize + gridW + borderWidth * 2;
+                const totalH = gridH + axisSize;
 
-                    canvas.width = totalW;
-                    canvas.height = totalH;
-                    canvas.style.width = totalW + 'px';
-                    canvas.style.height = totalH + 'px';
+                canvas.width = totalW;
+                canvas.height = totalH;
+                canvas.style.width = totalW + 'px';
+                canvas.style.height = totalH + 'px';
 
-                    ctx.fillStyle = '#d5cee2';
-                    ctx.fillRect(axisSize + borderWidth, 0, gridW, gridH);
+                ctx.fillStyle = '#d5cee2';
+                ctx.fillRect(axisSize + borderWidth, 0, gridW, gridH);
 
-                    const gridOffsetX = axisSize + borderWidth;
-                    const gridOffsetY = 0;
-                    const fontSize = Math.max(4, Math.round(cellSize * 0.3));
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
+                const gridOffsetX = axisSize + borderWidth;
+                const gridOffsetY = 0;
+                const fontSize = Math.max(4, Math.round(cellSize * 0.3));
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
 
-                    for (let r = 0; r < rows; r++) {
-                        for (let c = 0; c < cols; c++) {
-                            const idx = r * cols + c;
-                            if (isTransparentArr[idx]) continue;
-                            const x = gridOffsetX + c * (cellSize + gap);
-                            const y = gridOffsetY + r * (cellSize + gap);
-                            const hex = hexColors[idx];
-                            ctx.fillStyle = hex;
-                            ctx.fillRect(x, y, cellSize, cellSize);
-                            const mard = mardColors[idx] || '';
-                            ctx.fillStyle = getContrastColor(hex);
-                            ctx.font = `${fontSize}px "SF Mono", monospace`;
-                            ctx.fillText(mard, x + cellSize / 2, y + cellSize / 2);
-                        }
-                    }
-
-                    ctx.fillStyle = '#8b5cf6';
-                    ctx.fillRect(axisSize, 0, borderWidth, gridH);
-                    ctx.fillRect(axisSize + borderWidth + gridW, 0, borderWidth, gridH);
-
-                    let axisFontSize = Math.max(7, Math.round(axisSize * 0.35));
-                    ctx.font = `600 ${axisFontSize}px "SF Mono", "Menlo", monospace`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#4b2f7a';
-                    for (let r = 0; r < rows; r++) {
-                        const y = r * (cellSize + gap) + cellSize / 2;
-                        ctx.fillText(String(r + 1), axisSize / 2, y);
-                    }
+                for (let r = 0; r < rows; r++) {
                     for (let c = 0; c < cols; c++) {
-                        const x = gridOffsetX + c * (cellSize + gap) + cellSize / 2;
-                        const y = gridH + axisSize / 2;
-                        ctx.fillText(String(c + 1), x, y);
+                        const idx = r * cols + c;
+                        if (isTransparentArr[idx]) continue;
+                        const x = gridOffsetX + c * (cellSize + gap);
+                        const y = gridOffsetY + r * (cellSize + gap);
+                        const hex = hexColors[idx];
+                        ctx.fillStyle = hex;
+                        ctx.fillRect(x, y, cellSize, cellSize);
+                        const mard = mardColors[idx] || '';
+                        ctx.fillStyle = getContrastColor(hex);
+                        ctx.font = `${fontSize}px "SF Mono", monospace`;
+                        ctx.fillText(mard, x + cellSize / 2, y + cellSize / 2);
                     }
-                } else {
-                    // DOM 渲染
-                    gridContainer.style.display = 'grid';
-                    gridContainer.style.borderLeft = '6px solid #8b5cf6';
-                    gridContainer.style.borderRight = '6px solid #8b5cf6';
-                    const BASE_CELL = 20,
-                        BASE_GAP = 1,
-                        BASE_AXIS = 30,
-                        BASE_BORDER = 6;
-                    const scale = zoomPercent / 100;
-                    const cellSize = Math.max(2, BASE_CELL * scale);
-                    const gap = Math.max(0.5, BASE_GAP * scale);
-                    const axisSize = Math.max(14, BASE_AXIS * scale);
-                    const borderWidth = Math.max(2, BASE_BORDER * scale);
+                }
 
-                    gridPlaceholder.style.display = 'none';
+                ctx.fillStyle = '#8b5cf6';
+                ctx.fillRect(axisSize, 0, borderWidth, gridH);
+                ctx.fillRect(axisSize + borderWidth + gridW, 0, borderWidth, gridH);
 
-                    const colTemplate = `${axisSize}px repeat(${cols}, ${cellSize}px)`;
-                    const rowTemplate = `repeat(${rows}, ${cellSize}px) ${axisSize}px`;
-                    gridContainer.style.gridTemplateColumns = colTemplate;
-                    gridContainer.style.gridTemplateRows = rowTemplate;
-                    gridContainer.style.gap = `${gap}px`;
-                    gridContainer.style.backgroundColor = '#d5cee2';
-
-                    const fragment = document.createDocumentFragment();
-
-                    function createLabel(text, type, row, col) {
-                        const el = document.createElement('div');
-                        el.className = `axis-label ${type}`;
-                        el.textContent = text;
-                        el.style.gridRow = row;
-                        el.style.gridColumn = col;
-                        let fontSize = Math.max(6, 11 * scale);
-                        if (fontSize < 7) fontSize = 7;
-                        el.style.fontSize = fontSize + 'px';
-                        el.style.letterSpacing = '0.3px';
-                        el.style.backgroundColor = type === 'row-label' ? '#e8e0f7' :
-                            (type === 'col-label' ? '#e8e0f7' : '#f5f1fc');
-                        return el;
-                    }
-
-                    const corner = document.createElement('div');
-                    corner.className = 'axis-label corner';
-                    corner.style.gridRow = '1';
-                    corner.style.gridColumn = '1';
-                    corner.style.backgroundColor = '#f5f1fc';
-                    corner.textContent = '';
-                    fragment.appendChild(corner);
-
-                    for (let r = 0; r < rows; r++) {
-                        const label = createLabel(String(r + 1), 'row-label', r + 2, 1);
-                        fragment.appendChild(label);
-                    }
-                    for (let c = 0; c < cols; c++) {
-                        const label = createLabel(String(c + 1), 'col-label', rows + 1, c + 2);
-                        fragment.appendChild(label);
-                    }
-                    for (let r = 0; r < rows; r++) {
-                        for (let c = 0; c < cols; c++) {
-                            const idx = r * cols + c;
-                            const div = document.createElement('div');
-                            div.className = 'cell';
-                            if (isTransparentArr[idx]) {
-                                div.style.backgroundColor = 'transparent';
-                                div.style.border = '1px dashed #ccc';
-                                div.textContent = '';
-                            } else {
-                                const hex = hexColors[idx];
-                                div.style.backgroundColor = hex;
-                                div.style.border = 'none';
-                                div.style.display = 'flex';
-                                div.style.alignItems = 'center';
-                                div.style.justifyContent = 'center';
-                                const fontSize = Math.max(4, 6 * scale);
-                                div.style.fontSize = fontSize + 'px';
-                                div.style.fontWeight = '700';
-                                div.style.color = getContrastColor(hex);
-                                div.style.textShadow = 'none';
-                                div.textContent = mardColors[idx] || '';
-                            }
-                            div.style.gridRow = r + 2;
-                            div.style.gridColumn = c + 2;
-                            fragment.appendChild(div);
-                        }
-                    }
-                    gridContainer.appendChild(fragment);
+                let axisFontSize = Math.max(7, Math.round(axisSize * 0.35));
+                ctx.font = `600 ${axisFontSize}px "SF Mono", "Menlo", monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = '#4b2f7a';
+                for (let r = 0; r < rows; r++) {
+                    const y = r * (cellSize + gap) + cellSize / 2;
+                    ctx.fillText(String(r + 1), axisSize / 2, y);
+                }
+                for (let c = 0; c < cols; c++) {
+                    const x = gridOffsetX + c * (cellSize + gap) + cellSize / 2;
+                    const y = gridH + axisSize / 2;
+                    ctx.fillText(String(c + 1), x, y);
                 }
 
                 renderLegend(colorMap);
@@ -1421,7 +1333,7 @@
             }
 
             // ============================================================
-            //  导出功能（图例改为 竖向排列 · 列优先）
+            //  导出功能（图例改为 竖向排列 · 列优先）—— 完全保留
             // ============================================================
 
             // ---------- 辅助：绘制网格到 Canvas（不变） ----------
@@ -1984,7 +1896,7 @@
                         const gridData = generateGridData(uploadedImage, rows, cols, quantLevels);
                         currentGridData = gridData;
                         renderGrid(gridData, currentZoom);
-                        applyZoom(currentZoom);
+                        // 缩放已包含在 renderGrid 中，无需额外调用
                     } catch (err) {
                         console.error(err);
                         alert('生成图纸失败：' + err.message);
@@ -2135,7 +2047,7 @@
                 };
             }
 
-            console.log('拼豆图纸工具已加载 · MARD 221色支持 ');
+            console.log('拼豆图纸工具已加载 · MARD 221色支持 (纯Canvas渲染)');
         })();
     </script>
 </body>
